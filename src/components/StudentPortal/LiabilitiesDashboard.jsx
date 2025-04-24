@@ -1,4 +1,3 @@
-// components/StudentPortal/LiabilitiesDashboard.jsx
 import React, { useState, useEffect } from "react";
 import PaymentPopup from "./PaymentPopup";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Calendar, Filter, Check, AlertTriangle, RefreshCw, X } from "lucide-react";
@@ -13,7 +12,7 @@ const LiabilitiesDashboard = () => {
   const [selectedLiability, setSelectedLiability] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Define liability categories
+  // liability categories
   const schoolFees = [
     "Tuition Fee",
     "Miscellaneous Fee",
@@ -40,10 +39,10 @@ const LiabilitiesDashboard = () => {
     "National Honor Society Fee"
   ];
   
-  // Generate sample liabilities with proper categories
+  // sample liabilities with proper categories
   const generateLiabilities = () => {
     const result = [];
-    // Generate School Fees
+    // School Fees
     schoolFees.forEach((fee, i) => {
       result.push({
         id: i + 1,
@@ -58,7 +57,7 @@ const LiabilitiesDashboard = () => {
       });
     });
     
-    // Generate Membership Fees
+    // Membership Fees
     membershipFees.forEach((fee, i) => {
       result.push({
         id: i + 11,
@@ -79,7 +78,7 @@ const LiabilitiesDashboard = () => {
   const [liabilities, setLiabilities] = useState(generateLiabilities());
 
   useEffect(() => {
-    // Simulate loading data
+    // loading data simulation
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 800);
@@ -108,14 +107,14 @@ const LiabilitiesDashboard = () => {
   };
 
   const filteredLiabilities = liabilities.filter((item) => {
-    // Filter by fee type (School Fee or Membership Fee)
+    // filter by fee type (School Fee or Membership Fee)
     if (selectedFilter === "School Fee" && item.type !== "School Fee") return false;
     if (selectedFilter === "Membership Fee" && item.type !== "Membership Fee") return false;
     
-    // Filter by status
+    // filter by status (Paid Unpaid Under Review REjected)
     if (statusFilter !== "Status" && statusFilter !== item.status) return false;
     
-    // Filter by search term
+    // filter by search term
     if (searchTerm &&
       !item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       !item.type.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -189,7 +188,7 @@ const LiabilitiesDashboard = () => {
 
   const summary = getSummary();
 
-  // Format date to more readable format
+  // date format
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

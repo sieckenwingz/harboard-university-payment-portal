@@ -12,25 +12,20 @@ import {
   X,
 } from "lucide-react";
 
-/**
- * Sidebar component for student portal navigation.
- * Displays user's avatar and name, navigation links, help section, and logout functionality.
- * Sidebar can be collapsed or expanded.
- */
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Toggle state for sidebar collapse
+  // state for sidebar toggle collapse
   const [collapsed, setCollapsed] = useState(false);
 
-  // State for showing/hiding logout confirmation popup
+  // state for showing/hiding logout confirmation popup
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // State for showing/hiding student profile modal
+  // state for showing/hiding student profile modal
   const [showUserProfile, setShowUserProfile] = useState(false);
 
-  // Hardcoded student data (this may later be fetched from the backend)
+  // hardcoded student data (nilagay ko lang sample para mas magets hehe)
   const userData = {
     name: "Ansierina Mae",
     studentId: "2023-12345",
@@ -39,10 +34,9 @@ const Sidebar = () => {
     enrollmentStatus: "Enrolled",
     avatar: "A", // Initial shown in avatar circle
   };
-
-  /**
-   * Determines which page is currently selected based on route
-   */
+  
+   //determines which page is currently selected based on route
+  
   const getSelectedPage = () => {
     const path = location.pathname;
     if (path === "/dashboard") return "Liabilities";
@@ -77,28 +71,28 @@ const Sidebar = () => {
     }
   };
 
-  // Triggers logout confirmation modal
+  // triggers logout confirmation modal
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
   };
 
-  // Proceeds with logout and redirects to login page
+  // proceeds with logout and redirects to login page
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
-    navigate("/student-login"); // Update this route if backend uses a different logout process
+    navigate("/student-login"); 
   };
 
-  // Cancels logout action
+  // cancels logout action
   const cancelLogout = () => {
     setShowLogoutConfirm(false);
   };
 
-  // Toggles profile modal visibility
+  // toggles profile modal visibility
   const toggleUserProfile = () => {
     setShowUserProfile(!showUserProfile);
   };
 
-  // List of navigation links for the sidebar
+  // list of navigation links for the sidebar
   const sidebarItems = [
     { label: "Liabilities", icon: <LayoutDashboard size={18} /> },
     { label: "Payment History", icon: <History size={18} /> },
@@ -107,13 +101,13 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Sidebar Container */}
+      {/* sidebar container */}
       <div
         className={`h-screen transition-all duration-300 ${
           collapsed ? "w-[80px]" : "w-[250px]"
         } bg-white text-gray-800 shadow-xl p-4 overflow-y-auto relative`}
       >
-        {/* Avatar + Name (clickable to open profile modal) */}
+        {/* avatar + name (clickable to open profile modal) */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center cursor-pointer" onClick={toggleUserProfile}>
             <div className="w-12 h-12 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-lg ring-4 ring-[#a63f42]/20">
@@ -125,7 +119,7 @@ const Sidebar = () => {
           </div>
         </div>
 
-        {/* Toggle Sidebar Button */}
+        {/* toggle sidebar button */}
         <button
           className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-full w-6 h-12 shadow-md hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42] z-10 flex items-center justify-center"
           onClick={() => setCollapsed(!collapsed)}
@@ -134,7 +128,7 @@ const Sidebar = () => {
           {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
 
-        {/* Main Navigation Items */}
+        {/* main navigation items */}
         <div className="flex flex-col gap-1">
           {sidebarItems.map(({ label, icon }) => (
             <div

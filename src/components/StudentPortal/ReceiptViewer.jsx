@@ -5,13 +5,13 @@ import html2pdf from "html2pdf.js";
 const ReceiptViewer = ({ payment, onClose }) => {
   const receiptRef = useRef(null);
   
-  // Format date to more readable format
+  // date fromat
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
   
-  // Function to download receipt as PDF
+  // download receipt as pdf
   const handleDownload = () => {
     const element = receiptRef.current;
     const opt = {
@@ -47,7 +47,7 @@ const ReceiptViewer = ({ payment, onClose }) => {
           </div>
         </div>
         
-        {/* Receipt Content - Scrollable */}
+        {/* Receipt Content */}
         <div className="p-4 overflow-y-auto max-h-[calc(90vh-64px)]">
           <div ref={receiptRef} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
             {/* Receipt Header */}

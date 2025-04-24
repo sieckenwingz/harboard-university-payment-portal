@@ -1,4 +1,3 @@
-// Help.jsx - Updated to remove Header and Sidebar (now in Layout)
 import React from 'react';
 
 const Help = () => {
