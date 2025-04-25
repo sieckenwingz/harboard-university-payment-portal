@@ -8,7 +8,12 @@ import LiabilitiesDashboard from './components/StudentPortal/LiabilitiesDashboar
 import PaymentHistory from './components/StudentPortal/PaymentHistory';
 import Notifications from './components/StudentPortal/Notifications';
 import Help from './components/StudentPortal/Help';
+import { createClient } from "@supabase/supabase-js";
 import './App.css';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 function App() {
   return (
