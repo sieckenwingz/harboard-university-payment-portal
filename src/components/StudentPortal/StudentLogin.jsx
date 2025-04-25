@@ -1,17 +1,29 @@
 import React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from './../../App'
 
 const StudentLogin = () => {
-  const [srCode, setSrCode] = useState("");
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
-
-  const handleLogin = () => {
-    console.log("Logging in with:", { srCode, password, rememberMe });
-    navigate("/dashboard");
-  };
+  
+  const handleLogin = async (event) => {
+    event.preventDefault()
+    setLoading(true)
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    })
+    if (error) {
+      alert(error.error_description || error.message)
+    } else {
+      navigate("/dashboard");
+    }
+    setLoading(false)
+  }
 
   return (
     <div className="w-screen h-screen flex items-center bg-white font-['Roboto']">
@@ -33,14 +45,14 @@ const StudentLogin = () => {
           {/* sr input */}
           <div className="w-full mt-6">
             <label className="text-[#1f1f1f] text-lg sm:text-xl font-normal">
-              SR-code
+              Email
             </label>
             <input
               type="text"
               className="w-full mt-2 p-3 bg-[#f7f6ff] rounded-lg shadow-inner text-lg"
-              placeholder="Enter your SR-code"
-              value={srCode}
-              onChange={(e) => setSrCode(e.target.value)}
+              placeholder="Enter your email  address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
@@ -78,8 +90,8 @@ const StudentLogin = () => {
           <button
             onClick={handleLogin}
             className="w-full sm:w-40 h-12 mt-6 bg-[#f3ce73] rounded-lg text-[#1f1f1f] text-lg sm:text-xl font-normal hover:bg-[#e3be63] transition"
-          >
-            Login
+            disabled={loading}>
+              {loading ? <span>Loading</span> : <span>Login</span>}
           </button>
         </div>
       </div>
