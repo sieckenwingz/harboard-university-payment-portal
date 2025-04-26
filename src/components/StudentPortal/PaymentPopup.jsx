@@ -318,19 +318,14 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
               </div>
 
               {/* Account details */}
-              <div className="absolute left-[343px] top-[109px] text-black text-base font-semibold">
-                Payment for:
-              </div>
-              
-              <div className="absolute left-[522px] top-[109px] text-black text-base font-normal">
-                {getFeeName()}
-              </div>
+            
 
               <div className="absolute left-[343px] top-[139px] text-black text-base font-semibold">
-                Account Name:<br />Account Number:<br />Reference Number:<br />Amount:<br />Date of Payment:
+                Payment for:<br />Account Name:<br />Account Number:<br />Reference Number:<br />Amount:<br />Date of Payment:
               </div>
 
               <div className="absolute left-[522px] top-[139px] text-black text-base font-normal">
+                {getFeeName()}<br />
                 {selectedLiability?.accountName || 'John Doe'}<br />
                 {selectedLiability?.accountNumber || '1234567890'}<br />
                 {selectedLiability?.referenceNumber || 'REF123456'}<br />

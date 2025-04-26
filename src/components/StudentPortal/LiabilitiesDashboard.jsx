@@ -277,7 +277,7 @@ const LiabilitiesDashboard = () => {
               onChange={(e) => handleDropdownChange(e, "Date Range")}
               className="pl-8 pr-6 py-2 border rounded-md text-gray-700 w-auto appearance-none focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
             >
-              <option>Date Range</option>
+              
               <option>Last 7 days</option>
               <option>Last 30 days</option>
               <option>This month</option>
@@ -293,7 +293,7 @@ const LiabilitiesDashboard = () => {
               onChange={(e) => handleDropdownChange(e, "Status")}
               className="pl-8 pr-6 py-2 border rounded-md text-gray-700 w-auto appearance-none focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
             >
-              <option>Status</option>
+              
               <option>Paid</option>
               <option>Unpaid</option>
               <option>Under Review</option>
@@ -309,7 +309,7 @@ const LiabilitiesDashboard = () => {
               onChange={(e) => handleDropdownChange(e, "Amount")}
               className="pl-8 pr-6 py-2 border rounded-md text-gray-700 w-auto appearance-none focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
             >
-              <option>Amount</option>
+              
               <option>High to Low</option>
               <option>Low to High</option>
             </select>
