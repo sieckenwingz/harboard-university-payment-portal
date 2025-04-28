@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
 import PaymentPopup from "./PaymentPopup";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Calendar, Filter, Check, AlertTriangle, RefreshCw, X } from "lucide-react";
+import { supabase } from "../../App";
+import { getStatus } from "../../Utils";
 
 const LiabilitiesDashboard = () => {
+  const [fees, setFees] = useState([])
+  const [loading, setLoading] = useState(true)
+
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFilter, setSelectedFilter] = useState("All liabilities");
   const [dateRange, setDateRange] = useState("Date Range");
@@ -10,7 +15,6 @@ const LiabilitiesDashboard = () => {
   const [amountFilter, setAmountFilter] = useState("Amount");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLiability, setSelectedLiability] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   
   // liability categories
   const schoolFees = [
@@ -39,51 +43,52 @@ const LiabilitiesDashboard = () => {
     "National Honor Society Fee"
   ];
   
-  // sample liabilities with proper categories
-  const generateLiabilities = () => {
-    const result = [];
-    // School Fees
-    schoolFees.forEach((fee, i) => {
-      result.push({
-        id: i + 1,
-        name: fee,
-        type: "School Fee",
-        amount: `${(i + 1) * 500 + 1000}`,
-        dueDate: `2025-05-${(i % 30) + 1}`,
-        status: ["Paid", "Unpaid", "Under Review", "Rejected"][i % 4],
-        accountName: "John Doe",
-        accountNumber: "1234567890",
-        referenceNumber: `REF${100000 + i}`
-      });
-    });
-    
-    // Membership Fees
-    membershipFees.forEach((fee, i) => {
-      result.push({
-        id: i + 11,
-        name: fee,
-        type: "Membership Fee",
-        amount: `${(i + 1) * 100 + 200}`,
-        dueDate: `2025-05-${(i % 30) + 1}`,
-        status: ["Paid", "Unpaid", "Under Review", "Rejected"][i % 4],
-        accountName: "John Doe",
-        accountNumber: "1234567890",
-        referenceNumber: `REF${200000 + i}`
-      });
-    });
-    
-    return result;
-  };
-  
-  const [liabilities, setLiabilities] = useState(generateLiabilities());
-
   useEffect(() => {
-    // loading data simulation
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchFees = async () => {
+      setLoading(true)
+
+      const {
+        data: { user },
+        error: userError
+      } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        console.error('User fetch error:', userError)
+        setLoading(false)
+        return
+      }
+
+      const { data: feesData, error: feesError } = await supabase
+        .from('student_fees')
+        .select('*, payment_id(*), fee_id(*)')
+        .eq('student_id', user.id);
+
+      console.log(feesData);
+
+      if (feesError) {
+        console.error('Fees fetch error:', feesError)
+      } else {
+        const result = [];
+        feesData.forEach((fee, i) => {
+          result.push({
+            id: i,
+            name: fee['fee_id']['name'] ?? 'FEE',
+            type: "Membership Fee",
+            amount: fee['fee_id']['amount'],
+            dueDate: fee['fee_id']['deadline'],
+            status: getStatus(fee),
+            accountName: "John Doe",  // TODO:
+            accountNumber: "1234567890",  // TODO:
+            referenceNumber: `REF${200000 + i}`  // TODO:
+          });
+        });
+        setFees(result);
+      }
+      setLoading(false)
+    }
+
+    fetchFees()
+  }, [])
 
   const rowsPerPage = 5;
 
@@ -99,14 +104,14 @@ const LiabilitiesDashboard = () => {
   };
 
   const updateLiabilityStatus = (liabilityId, newStatus) => {
-    setLiabilities(prevLiabilities => 
+    setFees(prevLiabilities => 
       prevLiabilities.map(item => 
         item.id === liabilityId ? { ...item, status: newStatus } : item
       )
     );
   };
 
-  const filteredLiabilities = liabilities.filter((item) => {
+  const filteredLiabilities = fees.filter((item) => {
     // filter by fee type (School Fee or Membership Fee)
     if (selectedFilter === "School Fee" && item.type !== "School Fee") return false;
     if (selectedFilter === "Membership Fee" && item.type !== "Membership Fee") return false;
@@ -178,10 +183,10 @@ const LiabilitiesDashboard = () => {
   };
 
   const getSummary = () => {
-    const paid = liabilities.filter(item => item.status === "Paid").length;
-    const unpaid = liabilities.filter(item => item.status === "Unpaid").length;
-    const underReview = liabilities.filter(item => item.status === "Under Review").length;
-    const rejected = liabilities.filter(item => item.status === "Rejected").length;
+    const paid = fees.filter(item => item.status === "Paid").length;
+    const unpaid = fees.filter(item => item.status === "Unpaid").length;
+    const underReview = fees.filter(item => item.status === "Under Review").length;
+    const rejected = fees.filter(item => item.status === "Rejected").length;
     
     return { paid, unpaid, underReview, rejected };
   };
@@ -338,7 +343,7 @@ const LiabilitiesDashboard = () => {
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">STATUS</span>
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="w-full flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a63f42]"></div>
         </div>
@@ -358,8 +363,8 @@ const LiabilitiesDashboard = () => {
               >
                 <span style={{ width: "25%" }} className="text-gray-700 font-medium">{item.name}</span>
                 <span style={{ width: "20%" }} className="text-gray-700">{item.type}</span>
-                <span style={{ width: "15%" }} className="text-gray-700">₱{item.amount}</span>
-                <span style={{ width: "20%" }} className="text-gray-700">{formatDate(item.dueDate)}</span>
+                <span style={{ width: "15%" }} className="text-gray-700">₱{item.amount / 100}</span>
+                <span style={{ width: "20%" }} className="text-gray-700">{item.dueDate != null ? formatDate(item.dueDate) : "No due date"}</span>
                 <span style={{ width: "20%" }} className="flex items-center">
                   <span 
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm ${statusStyle.bgColor} border ${statusStyle.borderColor}`} 
