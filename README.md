@@ -1,12 +1,36 @@
-# React + Vite
+# harboard University Payment Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a React.js application. It is built using React and can be managed using npm (Node Package Manager).
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Before running the app, make sure you have the following installed:
 
-## Expanding the ESLint configuration
+- [Node.js](https://nodejs.org/) (which includes npm)
+- A code editor like [VSCode](https://code.visualstudio.com/)
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Getting Started
+
+To get started with the app, follow these steps:
+
+### 1. Clone the repository
+
+Clone the repository to your local machine:
+
+```bash
+git clone https://github.com/sieckenwingz/harboard-university-payment-portal.git
+```
+
+### 2. Install dependencies
+
+Navigate to the project directory and install the required dependencies:
+
+```bash
+npm install
+```
+
+### 3. Run the app
+
+```bash
+npm run dev
+```
