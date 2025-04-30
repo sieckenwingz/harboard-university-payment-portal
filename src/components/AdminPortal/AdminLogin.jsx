@@ -11,7 +11,7 @@ const AdminLogin = () => {
 
   const handleLogin = () => {
     console.log("Logging in with:", { adminID, password, rememberMe });
-    navigate("/dashboard");
+    navigate("/admin-dashboard");
   };
 
   return (
