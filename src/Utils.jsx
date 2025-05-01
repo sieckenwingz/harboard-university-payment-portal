@@ -1,4 +1,4 @@
-import { Status } from "./models/Status";
+import { parseStatus, Status } from "./models/Status";
 
 export const getStatus = (fee) => {
   const payment_id = fee['payment_id'];

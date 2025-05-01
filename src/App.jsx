@@ -51,7 +51,7 @@ function App() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session) {
-        navigate('/')
+        navigate('/dashboard')
       } else {
         navigate('/')
       }
@@ -59,21 +59,22 @@ function App() {
 
     return () => listener?.subscription.unsubscribe()
   }, [])
-  
+
   return (
     <div className="app-container">
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/student-login" element={<StudentLogin />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route element={<Layout />}>
+        <Route path="/" element={<PublicRoute session={session}><LandingPage /></PublicRoute>} />
+        <Route path="/student-login" element={<PublicRoute session={session}><StudentLogin /></PublicRoute>} />
+        <Route path="/admin-login" element={<PublicRoute session={session}><AdminLogin /></PublicRoute>} />
+        <Route element={<ProtectedRoute session={session}><Layout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<LiabilitiesDashboard />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/help" element={<Help />} />
         </Route>
 
-        <Route element={<AdminLayout />}>
+        {/* TODO: Replace [PublicRoute] with [ProtectedRoute] after implementing */}
+        <Route element={<PublicRoute session={session}><AdminLayout /></PublicRoute>}>
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-help" element={<AdminHelp />} />
           <Route path="/management" element={<Management />} />

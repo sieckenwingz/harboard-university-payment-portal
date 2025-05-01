@@ -1,3 +1,4 @@
+// components/StudentPortal/Sidebar.jsx
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -10,6 +11,7 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
+import { supabase } from "../../App";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -33,9 +35,9 @@ const Sidebar = () => {
     enrollmentStatus: "Enrolled",
     avatar: "A", // Initial shown in avatar circle
   };
-  
-   //determines which page is currently selected based on route
-  
+
+  //determines which page is currently selected based on route
+
   const getSelectedPage = () => {
     const path = location.pathname;
     if (path === "/dashboard") return "Liabilities";
@@ -78,7 +80,7 @@ const Sidebar = () => {
   // proceeds with logout and redirects to login page
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
-    navigate("/student-login"); 
+    supabase.auth.signOut()
   };
 
   // cancels logout action
@@ -102,9 +104,8 @@ const Sidebar = () => {
     <>
       {/* sidebar container */}
       <div
-        className={`h-screen transition-all duration-300 ${
-          collapsed ? "w-[80px]" : "w-[250px]"
-        } bg-white text-gray-800 shadow-xl p-4 overflow-y-auto relative`}
+        className={`h-screen transition-all duration-300 ${collapsed ? "w-[80px]" : "w-[250px]"
+          } bg-white text-gray-800 shadow-xl p-4 overflow-y-auto relative`}
       >
         {/* avatar + name (clickable to open profile modal) */}
         <div className="flex items-center justify-between mb-6">
@@ -134,10 +135,9 @@ const Sidebar = () => {
               key={label}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200
                 ${collapsed ? "justify-center" : ""}
-                ${
-                  selectedPage === label
-                    ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
-                    : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
+                ${selectedPage === label
+                  ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
+                  : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
                 }`}
               onClick={() => handleSidebarClick(label)}
             >
@@ -155,14 +155,12 @@ const Sidebar = () => {
 
           {/* Help Navigation */}
           <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
-              collapsed ? "justify-center" : ""
-            }
-            ${
-              selectedPage === "Help"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${collapsed ? "justify-center" : ""
+              }
+            ${selectedPage === "Help"
                 ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
                 : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
-            }`}
+              }`}
             onClick={() => handleSidebarClick("Help")}
           >
             <div className="w-[18px] flex justify-center">
@@ -173,9 +171,8 @@ const Sidebar = () => {
 
           {/* Logout Button */}
           <div
-            className={`flex items-center gap-3 px-4 py-3 mt-2 rounded-lg cursor-pointer transition-all duration-200 ${
-              collapsed ? "justify-center" : ""
-            } hover:bg-[#fdf6f7] text-gray-600 hover:text-[#a63f42]`}
+            className={`flex items-center gap-3 px-4 py-3 mt-2 rounded-lg cursor-pointer transition-all duration-200 ${collapsed ? "justify-center" : ""
+              } hover:bg-[#fdf6f7] text-gray-600 hover:text-[#a63f42]`}
             onClick={handleLogoutClick}
           >
             <div className="w-[18px] flex justify-center">
