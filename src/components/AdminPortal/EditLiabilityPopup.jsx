@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import { X, Upload, CheckCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const EditLiabilityPopup = ({ liability, department, onClose, onUpdateLiability }) => {
+const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiability }) => {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -211,14 +211,14 @@ const EditLiabilityPopup = ({ liability, department, onClose, onUpdateLiability 
         {/* Form */}
         <form onSubmit={handleSubmit} className="overflow-y-auto py-2 px-4">
           <div className="space-y-4">
-            {/* Department */}
+            {/* Organization */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Department
+                Organization
               </label>
               <input
                 type="text"
-                value={department}
+                value={organization}
                 readOnly
                 className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 text-sm"
               />

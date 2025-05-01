@@ -5,11 +5,11 @@ import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter } from "lucide-react";
 
-const DepartmentLiabilities = () => {
-  const { departmentId } = useParams();
+const OrganizationLiabilities = () => {
+  const { organizationId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { department } = location.state || {};
+  const { organization } = location.state || {};
   
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
@@ -50,7 +50,7 @@ const DepartmentLiabilities = () => {
   };
 
   useEffect(() => {
-    if (!department) {
+    if (!organization) {
       navigate("/");
       return;
     }
@@ -81,7 +81,7 @@ const DepartmentLiabilities = () => {
       
       // generated membership fe
       membershipFees.forEach(fee => {
-        if (fee.includes(department.name) || Math.random() > 0.7) { 
+        if (fee.includes(organization.name) || Math.random() > 0.7) { 
           const amount = Math.floor(Math.random() * 1000) + 100;
           const pendingStudents = Math.floor(Math.random() * 20) + 1;
           
@@ -132,7 +132,7 @@ const DepartmentLiabilities = () => {
       setLiabilities(generateLiabilities());
       setIsLoading(false);
     }, 800);
-  }, [department, navigate]);
+  }, [organization, navigate]);
 
   const rowsPerPage = 5;
 
@@ -145,9 +145,9 @@ const DepartmentLiabilities = () => {
   };
 
   const navigateToStudentPayments = (liability) => {
-    navigate(`/departments/${departmentId}/liabilities/${liability.id}`, {
+    navigate(`/organizations/${organizationId}/liabilities/${liability.id}`, {
       state: { 
-        department, 
+        organization, 
         liability 
       }
     });
@@ -198,7 +198,7 @@ const DepartmentLiabilities = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {department?.name} Liabilities
+            {organization?.name} Liabilities
           </h1>
           <p className="text-gray-600 mt-1">
             {getTotalPendingVerifications()} pending student payments across {liabilities.length} liabilities
@@ -335,4 +335,4 @@ const DepartmentLiabilities = () => {
   );
 };
 
-export default DepartmentLiabilities;
+export default OrganizationLiabilities;

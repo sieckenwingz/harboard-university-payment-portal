@@ -1,8 +1,8 @@
 import React from "react";
 import { X, CheckCircle, AlertTriangle, Calendar, Clock, RefreshCw } from "lucide-react";
 
-const ViewDetailsPopup = ({ show, departmentData, onClose, onDataChange }) => {
-  if (!show || !departmentData) {
+const ViewDetailsPopup = ({ show, organizationData, onClose, onDataChange }) => {
+  if (!show || !organizationData) {
     return null;
   }
 
@@ -37,14 +37,14 @@ const ViewDetailsPopup = ({ show, departmentData, onClose, onDataChange }) => {
     }
   };
 
-  const priorityInfo = getPriorityLabel(departmentData.pendingVerifications);
+  const priorityInfo = getPriorityLabel(organizationData.pendingVerifications);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-800">Department Details</h2>
+            <h2 className="text-xl font-bold text-gray-800">Organization Details</h2>
             <button
               onClick={onClose}
               className="p-1 rounded-full hover:bg-gray-100"
@@ -57,19 +57,19 @@ const ViewDetailsPopup = ({ show, departmentData, onClose, onDataChange }) => {
         <div className="p-4">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">
-              {departmentData.name}
+              {organizationData.name}
             </h3>
             <div className="space-y-2">
               <div className="flex items-center">
                 <Calendar size={18} className="text-gray-500 mr-2" />
                 <span className="text-gray-700">
-                  Last Updated: {formatDate(departmentData.lastUpdate)}
+                  Last Updated: {formatDate(organizationData.lastUpdate)}
                 </span>
               </div>
               <div className="flex items-center">
                 <Clock size={18} className="text-gray-500 mr-2" />
                 <span className="text-gray-700">
-                  Type: {departmentData.type}
+                  Type: {organizationData.type}
                 </span>
               </div>
             </div>
@@ -82,22 +82,22 @@ const ViewDetailsPopup = ({ show, departmentData, onClose, onDataChange }) => {
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-600">Pending:</span>
               <span className="font-semibold text-gray-800">
-                {departmentData.pendingVerifications}
+                {organizationData.pendingVerifications}
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
               <div
                 className={`h-2.5 rounded-full ${
-                  departmentData.pendingVerifications >= 20
+                  organizationData.pendingVerifications >= 20
                     ? "bg-red-500"
-                    : departmentData.pendingVerifications >= 10
+                    : organizationData.pendingVerifications >= 10
                     ? "bg-orange-500"
                     : "bg-green-500"
                 }`}
                 style={{
                   width: `${Math.min(
                     100,
-                    (departmentData.pendingVerifications / 30) * 100
+                    (organizationData.pendingVerifications / 30) * 100
                   )}%`,
                 }}
               ></div>

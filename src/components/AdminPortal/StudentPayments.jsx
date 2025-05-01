@@ -23,10 +23,10 @@ import TransactionProcessingModal from "./TransactionProcessingModal";
 import ConfirmationModal from "./ConfirmationModal";
 
 const StudentPayments = () => {
-  const { departmentId, liabilityId } = useParams();
+  const { organizationId, liabilityId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { department, liability } = location.state || {};
+  const { organization, liability } = location.state || {};
   const fileInputRef = useRef(null);
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,7 +55,7 @@ const StudentPayments = () => {
   
   useEffect(() => {
     if (!liability) {
-      navigate(`/departments/${departmentId}`);
+      navigate(`/organizations/${organizationId}`);
       return;
     }
     
@@ -162,7 +162,7 @@ const StudentPayments = () => {
       setRejectedStudents(rejectedStudentsSample);
       setIsLoading(false);
     }, 800);
-  }, [liability, departmentId, navigate]);
+  }, [liability, organizationId, navigate]);
 
   const rowsPerPage = 5;
 

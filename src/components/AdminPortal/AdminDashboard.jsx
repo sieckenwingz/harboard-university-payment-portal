@@ -1,5 +1,5 @@
 // 1st nav sa liabilities sidebar
-// department overview
+// organization overview
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,31 +13,22 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState(null); 
+  const [selectedOrganization, setSelectedOrganization] = useState(null); 
   
-  // sample academic departments data
-  const universityDepartments = [
-    "College of Engineering",
-    "College of Business",
-    "College of Arts and Sciences",
-    "College of Education",
-    "College of Medicine",
-    "College of Law",
-    "College of Architecture",
-    "College of Agriculture",
-    "College of Fine Arts",
-    "College of Information Technology"
+  const universityOrganizations = [
+    "SSC",
+    "COE",
+    "CURSOR",
   ];
   
-  // sample departments data
-  const generateDepartments = () => {
+  const generateOrganizations = () => {
     const result = [];
-    // departments
-    universityDepartments.forEach((dept, i) => {
+    // organizations
+    universityOrganizations.forEach((dept, i) => {
       result.push({
         id: i + 1,
         name: dept,
-        type: "Academic Department",
+        type: "Academic Organization",
         pendingVerifications: Math.floor(Math.random() * 30) + 1,
         lastUpdate: `2025-04-${(i % 25) + 1}`
       });
@@ -46,7 +37,7 @@ const AdminDashboard = () => {
     return result;
   };
   
-  const [departments, setDepartments] = useState(generateDepartments());
+  const [organizations, setOrganizations] = useState(generateOrganizations());
 
   useEffect(() => {
     // loading data simulation
@@ -62,39 +53,39 @@ const AdminDashboard = () => {
     if (filterType === "Status") setStatusFilter(e.target.value);
   };
 
-  const updateDepartmentData = (departmentId, newData) => {
-    setDepartments(prevDepartments => 
-      prevDepartments.map(item => 
-        item.id === departmentId ? { ...item, ...newData } : item
+  const updateOrganizationData = (organizationId, newData) => {
+    setOrganizations(prevOrganizations => 
+      prevOrganizations.map(item => 
+        item.id === organizationId ? { ...item, ...newData } : item
       )
     );
   };
 
-  //to navigate to department liabilities page
-  const navigateToDepartmentLiabilities = (department) => {
-    navigate(`/department-liabilities/${department.id}`, { state: { department } });
+  //to navigate to organization liabilities page
+  const navigateToOrganizationLiabilities = (organization) => {
+    navigate(`/organization-liabilities/${organization.id}`, { state: { organization } });
   };
 
-  //to open popup with department details
-  const openDepartmentPopup = (department, e) => {
+  //to open popup with organization details
+  const openOrganizationPopup = (organization, e) => {
     e.stopPropagation(); // Stop event propagation to prevent row click
-    setSelectedDepartment(department);
+    setSelectedOrganization(organization);
     setShowPopup(true);
   };
 
   // to close popup
   const closePopup = () => {
     setShowPopup(false);
-    setSelectedDepartment(null);
+    setSelectedOrganization(null);
   };
 
   //to handle data changes from popup if needed
-  const handlePopupDataChange = (departmentId, newData) => {
-    updateDepartmentData(departmentId, newData);
+  const handlePopupDataChange = (organizationId, newData) => {
+    updateOrganizationData(organizationId, newData);
     closePopup();
   };
 
-  const filteredDepartments = departments.filter((item) => {
+  const filteredOrganizations = organizations.filter((item) => {
     // filter by verification status (High, Medium, Low)
     if (statusFilter === "High Priority" && item.pendingVerifications < 20) return false;
     if (statusFilter === "Medium Priority" && (item.pendingVerifications < 10 || item.pendingVerifications >= 20)) return false;
@@ -109,11 +100,11 @@ const AdminDashboard = () => {
     return true;
   });
 
-  let displayDepartments = [...filteredDepartments];
+  let displayOrganizations = [...filteredOrganizations];
 
-  const totalPages = Math.ceil(displayDepartments.length / rowsPerPage);
+  const totalPages = Math.ceil(displayOrganizations.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentDepartments = displayDepartments.slice(startIndex, startIndex + rowsPerPage);
+  const currentOrganizations = displayOrganizations.slice(startIndex, startIndex + rowsPerPage);
 
   const getPriorityStyle = (pendingCount) => {
     if (pendingCount >= 20) {
@@ -144,10 +135,10 @@ const AdminDashboard = () => {
   };
 
   const getSummary = () => {
-    const academic = departments.length;
-    const highPriority = departments.filter(item => item.pendingVerifications >= 20).length;
-    const mediumPriority = departments.filter(item => item.pendingVerifications >= 10 && item.pendingVerifications < 20).length;
-    const lowPriority = departments.filter(item => item.pendingVerifications < 10).length;
+    const academic = organizations.length;
+    const highPriority = organizations.filter(item => item.pendingVerifications >= 20).length;
+    const mediumPriority = organizations.filter(item => item.pendingVerifications >= 10 && item.pendingVerifications < 20).length;
+    const lowPriority = organizations.filter(item => item.pendingVerifications < 10).length;
     
     return { academic, highPriority, mediumPriority, lowPriority };
   };
@@ -164,7 +155,7 @@ const AdminDashboard = () => {
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div>
         <h1 className="text-2xl font-bold mb-4 text-gray-800">
-          Department Overview
+          Organizations Overview
         </h1>
       </div>
 
@@ -173,7 +164,7 @@ const AdminDashboard = () => {
         <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 shadow-sm">
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-blue-600 font-medium">Total Departments</p>
+              <p className="text-blue-600 font-medium">Total Organizations</p>
               <p className="text-2xl font-bold text-blue-700">{summary.academic}</p>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
@@ -242,7 +233,7 @@ const AdminDashboard = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by department name..."
+            placeholder="Search by organization name..."
             className="pl-10 pr-4 py-2 border rounded-md text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
           />
           <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
@@ -250,7 +241,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="w-full flex justify-between py-4 mt-6 border-b bg-gray-50 px-4 rounded-t-lg">
-        <span style={{ width: "40%" }} className="text-gray-700 font-semibold">DEPARTMENT</span>
+        <span style={{ width: "40%" }} className="text-gray-700 font-semibold">ORGANIZATION</span>
         <span style={{ width: "40%" }} className="text-gray-700 font-semibold">STATUS</span>
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">ACTIONS</span>
       </div>
@@ -259,19 +250,19 @@ const AdminDashboard = () => {
         <div className="w-full flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a63f42]"></div>
         </div>
-      ) : currentDepartments.length === 0 ? (
+      ) : currentOrganizations.length === 0 ? (
         <div className="w-full flex justify-center items-center h-32 text-gray-500 text-sm bg-gray-50 rounded-b-lg">
-          No departments found.
+          No organizations found.
         </div>
       ) : (
         <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
-          {currentDepartments.map((item) => {
+          {currentOrganizations.map((item) => {
             const priorityStyle = getPriorityStyle(item.pendingVerifications);
             return (
               <div
                 key={item.id}
                 className="w-full flex justify-between py-4 px-4 border-b hover:bg-gray-50 cursor-pointer"
-                onClick={() => navigateToDepartmentLiabilities(item)}
+                onClick={() => navigateToOrganizationLiabilities(item)}
               >
                 <span style={{ width: "40%" }} className="text-gray-700 font-medium">{item.name}</span>
                 <span style={{ width: "40%" }} className="flex items-center">
@@ -285,7 +276,7 @@ const AdminDashboard = () => {
                 </span>
                 <span style={{ width: "20%" }}>
                   <button 
-                    onClick={(e) => openDepartmentPopup(item, e)}
+                    onClick={(e) => openOrganizationPopup(item, e)}
                     className="px-3 py-1.5 bg-[#a63f42] text-white rounded-md text-sm hover:bg-[#8a3538] transition-colors duration-200 flex items-center justify-center"
                   >
                     View Details
@@ -354,7 +345,7 @@ const AdminDashboard = () => {
 
       <ViewDetailsPopup
         show={showPopup} 
-        departmentData={selectedDepartment} 
+        organizationData={selectedOrganization} 
         onClose={closePopup} 
         onDataChange={handlePopupDataChange} 
       />
