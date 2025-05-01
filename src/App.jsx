@@ -1,6 +1,10 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+
 import LandingPage from './components/LandingPage/LandingPage';
+
 
 import Layout from './components/StudentPortal/Layout';
 import StudentLogin from './components/StudentPortal/StudentLogin';
@@ -9,6 +13,19 @@ import PaymentHistory from './components/StudentPortal/PaymentHistory';
 import Notifications from './components/StudentPortal/Notifications';
 import Help from './components/StudentPortal/Help';
 import './App.css';
+
+import AdminLogin from './components/AdminPortal/AdminLogin'; // adjust the path if different
+import AdminLayout from './components/AdminPortal/AdminLayout';
+import AdminDashboard from './components/AdminPortal/AdminDashboard';
+import AdminHelp from './components/AdminPortal/AdminHelp';
+import Management from './components/AdminPortal/Management';
+import ManageDeptLiabs from './components/AdminPortal/ManageDeptLiabs';
+import DepartmentLiabilities from './components/AdminPortal/DepartmentLiabilities';
+import StudentPayments from './components/AdminPortal/StudentPayments';
+
+import AddLiabilityPopup from './components/AdminPortal/AddLiabilityPopup';
+import EditLiabilityPopup from './components/AdminPortal/EditLiabilityPopup';
+
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
