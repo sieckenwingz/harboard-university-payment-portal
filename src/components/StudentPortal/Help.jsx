@@ -1,6 +1,11 @@
 import React from 'react';
+import useUserData from './hooks/useUserData';
 
 const Help = () => {
+  const { userData, getFullName } = useUserData();
+  const studentName = getFullName();
+  const srCode = userData.srCode || "Loading...";
+
   const faqItems = [
     {
       question: "How do I pay my tuition fees?",
@@ -23,6 +28,16 @@ const Help = () => {
   return (
     <>
       <h1 className="text-gray-700 text-[28px] font-medium">Help & Support</h1>
+      
+      {/* Personalized greeting */}
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 my-4">
+        <p className="text-lg text-blue-800">
+          Hello {studentName} (SR-Code: {srCode}), how can we help you today?
+        </p>
+        <p className="text-sm text-blue-600 mt-1">
+          Below you'll find answers to common questions about your payment portal. If you need further assistance, please contact our support team.
+        </p>
+      </div>
       
       <div className="mt-6">
         <div className="bg-white rounded-lg shadow p-6">

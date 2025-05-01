@@ -1,5 +1,5 @@
 // components/StudentPortal/Sidebar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,12 +10,17 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Loader2
 } from "lucide-react";
 import { supabase } from "../../App";
+import useUserData from "./hooks/useUserData";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Use our custom hook to get user data
+  const { userData, loading, error, fetchUserData, getFullName, getAvatarLetter, getSrCode } = useUserData();
 
   // state for sidebar toggle collapse
   const [collapsed, setCollapsed] = useState(false);
@@ -25,19 +30,21 @@ const Sidebar = () => {
 
   // state for showing/hiding student profile modal
   const [showUserProfile, setShowUserProfile] = useState(false);
-
-  // hardcoded student data (nilagay ko lang sample para mas magets hehe)
-  const userData = {
-    name: "Ansierina Mae",
-    studentId: "2023-12345",
-    program: "Bachelor of Science in Computer Engineering",
-    yearLevel: "3rd Year",
-    enrollmentStatus: "Enrolled",
-    avatar: "A", // Initial shown in avatar circle
-  };
-
-  //determines which page is currently selected based on route
-
+  
+  // Get user details for display
+  const fullName = getFullName();
+  const firstName = userData.firstName || "Loading...";
+  const avatarLetter = getAvatarLetter();
+  const srCode = getSrCode();
+  
+  // Refetch user data when profile modal is opened
+  useEffect(() => {
+    if (showUserProfile) {
+      fetchUserData();
+    }
+  }, [showUserProfile]);
+  
+  // determines which page is currently selected based on route
   const getSelectedPage = () => {
     const path = location.pathname;
     if (path === "/dashboard") return "Liabilities";
@@ -78,9 +85,10 @@ const Sidebar = () => {
   };
 
   // proceeds with logout and redirects to login page
-  const confirmLogout = () => {
-    setShowLogoutConfirm(false);
-    supabase.auth.signOut()
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false);  
+    await supabase.auth.signOut();
+    navigate('/student-login'); // Redirect to login page after sign out
   };
 
   // cancels logout action
@@ -104,17 +112,25 @@ const Sidebar = () => {
     <>
       {/* sidebar container */}
       <div
-        className={`h-screen transition-all duration-300 ${collapsed ? "w-[80px]" : "w-[250px]"
-          } bg-white text-gray-800 shadow-xl p-4 overflow-y-auto relative`}
+        className={`h-screen transition-all duration-300 ${
+          collapsed ? "w-[80px]" : "w-[250px]"
+        } bg-white text-gray-800 shadow-xl p-4 overflow-y-auto relative`}
       >
         {/* avatar + name (clickable to open profile modal) */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center cursor-pointer" onClick={toggleUserProfile}>
             <div className="w-12 h-12 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-lg ring-4 ring-[#a63f42]/20">
-              {userData.avatar}
+              {loading ? <Loader2 size={18} className="animate-spin" /> : avatarLetter}
             </div>
             {!collapsed && (
-              <div className="ml-4 font-semibold">{userData.name}</div>
+              <div className="ml-4">
+                <div className="font-semibold">{firstName}</div>
+                {loading ? (
+                  <div className="text-xs text-gray-400">Loading...</div>
+                ) : (
+                  <div className="text-xs text-gray-400">{srCode}</div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -135,9 +151,10 @@ const Sidebar = () => {
               key={label}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200
                 ${collapsed ? "justify-center" : ""}
-                ${selectedPage === label
-                  ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
-                  : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
+                ${
+                  selectedPage === label
+                    ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
+                    : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
                 }`}
               onClick={() => handleSidebarClick(label)}
             >
@@ -155,12 +172,14 @@ const Sidebar = () => {
 
           {/* Help Navigation */}
           <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${collapsed ? "justify-center" : ""
-              }
-            ${selectedPage === "Help"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
+              collapsed ? "justify-center" : ""
+            }
+            ${
+              selectedPage === "Help"
                 ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
                 : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
-              }`}
+            }`}
             onClick={() => handleSidebarClick("Help")}
           >
             <div className="w-[18px] flex justify-center">
@@ -171,8 +190,9 @@ const Sidebar = () => {
 
           {/* Logout Button */}
           <div
-            className={`flex items-center gap-3 px-4 py-3 mt-2 rounded-lg cursor-pointer transition-all duration-200 ${collapsed ? "justify-center" : ""
-              } hover:bg-[#fdf6f7] text-gray-600 hover:text-[#a63f42]`}
+            className={`flex items-center gap-3 px-4 py-3 mt-2 rounded-lg cursor-pointer transition-all duration-200 ${
+              collapsed ? "justify-center" : ""
+            } hover:bg-[#fdf6f7] text-gray-600 hover:text-[#a63f42]`}
             onClick={handleLogoutClick}
           >
             <div className="w-[18px] flex justify-center">
@@ -220,32 +240,50 @@ const Sidebar = () => {
               </button>
             </div>
 
-            {/* Student Profile Info (hardcoded) */}
-            <div className="flex items-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-2xl">
-                {userData.avatar}
+            {/* Student Profile Info */}
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <Loader2 size={32} className="animate-spin text-[#a63f42]" />
               </div>
-              <div className="ml-4">
-                <h4 className="font-bold text-xl">{userData.name}</h4>
-                <p className="text-gray-500 text-sm">{userData.studentId}</p>
+            ) : error ? (
+              <div className="text-center text-red-500 py-6">
+                <p>Error loading profile data</p>
+                <button 
+                  onClick={fetchUserData} 
+                  className="mt-3 px-4 py-2 bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300 transition-colors"
+                >
+                  Retry
+                </button>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center mb-6">
+                  <div className="w-16 h-16 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-2xl">
+                    {avatarLetter}
+                  </div>
+                  <div className="ml-4">
+                    <h4 className="font-bold text-xl">{fullName}</h4>
+                    <p className="text-gray-500 text-sm">{srCode}</p>
+                  </div>
+                </div>
 
-            {/* Profile Details */}
-            <div className="space-y-3">
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500">Program</span>
-                <span className="font-medium">{userData.program}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500">Year Level</span>
-                <span className="font-medium">{userData.yearLevel}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Enrollment Status</span>
-                <span className="font-medium text-green-600">{userData.enrollmentStatus}</span>
-              </div>
-            </div>
+                {/* Profile Details */}
+                <div className="space-y-3">
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-gray-500">Program</span>
+                    <span className="font-medium">BS Computer Engineering</span>
+                  </div>
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-gray-500">Year Level</span>
+                    <span className="font-medium">3rd Year</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Enrollment Status</span>
+                    <span className="font-medium text-green-600">Enrolled</span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Close Button */}
             <div className="mt-8 text-center">
