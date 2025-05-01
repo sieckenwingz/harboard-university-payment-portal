@@ -24,8 +24,6 @@ const AdminSidebar = () => {
     position: "System Administrator",
     organization: "Student Affairs Office",
     avatar: "A", 
-    organization: "Student Affairs Office", 
-    avatar: "A",
   };
 
   const getSelectedPage = () => {
