@@ -22,32 +22,33 @@ const AdminSidebar = () => {
   const adminData = {
     name: "Admin User",
     position: "System Administrator",
-    department: "Student Affairs Office",
+    organization: "Student Affairs Office", 
     avatar: "A",
   };
 
   const getSelectedPage = () => {
     const path = location.pathname;
+    
     if (path.match(/^\/[^/]+-liabilities$/)) {
       return "Management";
     }
-    if (
-      path === "/management" ||
-      path === "/add-new-liability" ||
-      path === "/edit-liability"
-    ) {
+    
+    if (path === "/management" || 
+        path === "/add-new-liability" ||
+        path === "/edit-liability") {
       return "Management";
     }
-    if (
-      path === "/admin-dashboard" ||
-      path.startsWith("/department-liabilities/") ||
-      (path.includes("/departments/") && path.includes("/liabilities/"))
-    ) {
+    
+    if (path === "/admin-dashboard" || 
+        path.startsWith("/organization-liabilities/") || 
+        (path.includes("/organizations/") && path.includes("/liabilities/"))) {
       return "Liabilities";
     }
+    
     if (path === "/admin-help") {
       return "Help";
     }
+    
     return "Liabilities";
   };
 
@@ -73,7 +74,7 @@ const AdminSidebar = () => {
     setShowLogoutConfirm(true);
   };
 
-  // Updated confirmLogout function to sign out properly
+  // Updated confirmLogout function from second version
   const confirmLogout = async () => {
     setShowLogoutConfirm(false);
     const { error } = await supabase.auth.signOut();
@@ -107,10 +108,7 @@ const AdminSidebar = () => {
         } bg-white text-gray-800 shadow-xl p-4 overflow-y-auto relative`}
       >
         <div className="flex items-center justify-between mb-6">
-          <div
-            className="flex items-center cursor-pointer"
-            onClick={toggleUserProfile}
-          >
+          <div className="flex items-center cursor-pointer" onClick={toggleUserProfile}>
             <div className="w-12 h-12 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-lg ring-4 ring-[#a63f42]/20">
               {adminData.avatar}
             </div>
@@ -149,9 +147,7 @@ const AdminSidebar = () => {
 
         <div className="absolute bottom-20 left-4 right-4">
           {!collapsed && (
-            <div className="text-xs font-semibold mb-2 text-gray-400">
-              SUPPORT
-            </div>
+            <div className="text-xs font-semibold mb-2 text-gray-400">SUPPORT</div>
           )}
 
           <div
@@ -188,9 +184,7 @@ const AdminSidebar = () => {
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
           <div className="bg-white text-gray-800 shadow-xl rounded-lg p-6 w-[300px]">
-            <p className="text-sm mb-4">
-              Are you sure you want to log out?
-            </p>
+            <p className="text-sm mb-4">Are you sure you want to log out?</p>
             <div className="flex justify-end gap-2">
               <button
                 className="text-sm text-gray-500 hover:text-gray-700"
@@ -238,8 +232,8 @@ const AdminSidebar = () => {
                 <span className="font-medium">{adminData.position}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Department</span>
-                <span className="font-medium">{adminData.department}</span>
+                <span className="text-gray-500">Organization</span>
+                <span className="font-medium">{adminData.organization}</span>
               </div>
             </div>
 

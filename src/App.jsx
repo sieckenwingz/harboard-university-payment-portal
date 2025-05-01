@@ -20,7 +20,6 @@ import Management from './components/AdminPortal/Management';
 import ManageDeptLiabs from './components/AdminPortal/ManageDeptLiabs';
 import DepartmentLiabilities from './components/AdminPortal/DepartmentLiabilities';
 import StudentPayments from './components/AdminPortal/StudentPayments';
-
 import AddLiabilityPopup from './components/AdminPortal/AddLiabilityPopup';
 import EditLiabilityPopup from './components/AdminPortal/EditLiabilityPopup';
 
@@ -30,12 +29,12 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Route guard for student public pages
+// Route guard for student public pages (landing, student login)
 function PublicRoute({ session, children }) {
   return session ? <Navigate to="/dashboard" replace /> : children;
 }
 
-// Route guard for student protected pages
+// Route guard for student protected pages (dashboard, payment history, etc.)
 function ProtectedRoute({ session, children }) {
   return session ? children : <Navigate to="/" replace />;
 }
@@ -68,10 +67,10 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
-
+    
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      // Removed the unconditional navigation to prevent overwriting admin routes.
+      // Removed unconditional navigation to preserve admin routes.
     });
 
     return () => listener?.subscription.unsubscribe();
@@ -81,6 +80,7 @@ function App() {
     <AuthProvider>
       <div className="app-container">
         <Routes>
+          {/* Public / Landing & Login routes */}
           <Route
             path="/"
             element={
@@ -106,6 +106,7 @@ function App() {
             }
           />
 
+          {/* Student protected routes */}
           <Route element={<ProtectedRoute session={session}><Layout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<LiabilitiesDashboard />} />
             <Route path="/payment-history" element={<PaymentHistory />} />
@@ -113,6 +114,7 @@ function App() {
             <Route path="/help" element={<Help />} />
           </Route>
 
+          {/* Admin protected routes */}
           <Route element={<AdminProtectedRoute session={session}><AdminLayout /></AdminProtectedRoute>}>
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/admin-help" element={<AdminHelp />} />
