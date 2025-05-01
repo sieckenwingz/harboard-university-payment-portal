@@ -42,8 +42,8 @@ const AdminSidebar = () => {
     }
     
     if (path === "/admin-dashboard" || 
-        path.startsWith("/department-liabilities/") ||
-        (path.includes("/departments/") && path.includes("/liabilities/"))) {
+        path.startsWith("/organization-liabilities/") ||
+        (path.includes("/organizations/") && path.includes("/liabilities/"))) {
       return "Liabilities";
     }
     
@@ -234,6 +234,8 @@ const AdminSidebar = () => {
                 <span className="font-medium">{adminData.position}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-gray-500">Organization</span>
+                <span className="font-medium">{adminData.organization}</span>
                 <span className="text-gray-500">Organization</span>
                 <span className="font-medium">{adminData.organization}</span>
               </div>
