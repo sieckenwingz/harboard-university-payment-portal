@@ -51,7 +51,7 @@ function App() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session) {
-        navigate('/dashboard')
+        navigate('/')
       } else {
         navigate('/')
       }
