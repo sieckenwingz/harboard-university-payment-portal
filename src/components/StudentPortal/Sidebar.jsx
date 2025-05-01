@@ -10,7 +10,6 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
-import { supabase } from "../../App";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -79,7 +78,7 @@ const Sidebar = () => {
   // proceeds with logout and redirects to login page
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
-    supabase.auth.signOut()
+    navigate("/student-login"); 
   };
 
   // cancels logout action
