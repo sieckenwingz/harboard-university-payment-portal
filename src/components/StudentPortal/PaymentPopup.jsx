@@ -1,77 +1,102 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../App';
+import { processOcr } from '../../lib/ocr/Ocr';
+import { uploadReceiptAndInsertPayment } from '../../lib/data/UploadPayment';
+import { formatDate } from '../../Utils';
 
 const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
+  const {user, _} = useAuth();
+
+  const [refNoEdit, setRefNoEdit] = useState(null);
+  const [amountEdit, setAmountEdit] = useState(null);
+  const [dateEdit, setDateEdit] = useState(null);
+
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptUrl, setReceiptUrl] = useState(null);
   const [showFirstPopup, setShowFirstPopup] = useState(true);
   const [showSecondPopup, setShowSecondPopup] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // mock database (para matest lang) // to persist uploaded receipts across liability status changes
-  const [receiptStore, setReceiptStore] = useState({});
+  /**
+   * Reset edit field values everytime the [selectedLiability changes].
+   */
+  useEffect(() => {
+    setRefNoEdit(selectedLiability?.paymentId?.refNo);
+    setAmountEdit(selectedLiability?.paymentId?.amount);
+    setDateEdit(selectedLiability?.paymentId?.paymentDate);
+  }, [selectedLiability]);
+
+  /**
+   * Automatically fetch the receipt signed url everytime the [receiptPath] of
+   * the [selectedLiability] changes.
+   */
+  useEffect(() => {
+    async function fetchImage() {
+      if (selectedLiability?.paymentId == null) return;
+
+      const { data, error } = await supabase
+        .storage
+        .from('receipts')
+        .createSignedUrl(selectedLiability.paymentId.receiptPath, 60); // path inside bucket
+
+      if (data?.signedUrl) {
+        setReceiptUrl(data.signedUrl);
+      } else {
+        console.error(error);
+      }
+    }
+
+    fetchImage();
+  }, [selectedLiability?.paymentId?.receiptPath]);
 
   useEffect(() => {
     // Reset states when main popup visibility changes
     if (show && selectedLiability) {
-      // Check if this liability already has a receipt in our mock store
-      const existingReceipt = receiptStore[selectedLiability.id];
-      
       // For statuses other than "Unpaid", show second popup directly
       if (selectedLiability.status !== "Unpaid") {
         setShowFirstPopup(false);
         setShowSecondPopup(true);
-        
-        // Use the stored receipt if available, otherwise create a placeholder
-        if (existingReceipt) {
-          setReceiptFile(existingReceipt);
-        } else if (selectedLiability.status === "Paid" || selectedLiability.status === "Under Review") {
-          // Simulate a receipt image for already paid/reviewed liabilities
-          const mockReceiptUrl = `/api/placeholder/217/368?text=Receipt-${selectedLiability.id}`;
-          setReceiptFile(mockReceiptUrl);
-          
-          // Store this mock receipt in our store for future reference
-          setReceiptStore(prev => ({
-            ...prev,
-            [selectedLiability.id]: mockReceiptUrl
-          }));
-        }
       } else {
         setShowFirstPopup(true);
         setShowSecondPopup(false);
-        // Check if we have a stored receipt even for unpaid liability (could happen if status was changed back)
-        if (existingReceipt) {
-          setReceiptFile(existingReceipt);
-        } else {
-          setReceiptFile(null);
-        }
       }
       setShowPopup(false);
       setReceiptUploaded(false);
       setIsExiting(false);
     }
-  }, [show, selectedLiability, receiptStore]);
-
-  // date format
-  const formatDate = (dateString) => {
-    if (!dateString) return 'MM/DD/YYYY';
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString; // Return original if invalid
-      
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const year = date.getFullYear();
-      
-      return `${month}/${day}/${year}`;
-    } catch (e) {
-      return dateString; // Fallback to original format
-    }
-  };
+  }, [show, selectedLiability]);
 
   if (!show) return null;
+
+  const handleOcr = async (file) => {
+    if (!file) {
+      alert('Please upload an image first.');
+      return;
+    }
+
+    setLoading(true);
+    
+    const data = await processOcr(file);
+
+    setRefNoEdit(data.refNo);
+    setAmountEdit(data.amount);
+    setDateEdit(data.date);
+
+    setLoading(false);
+
+    // transition between popups
+    setIsExiting(true);
+    setTimeout(() => {
+      setShowFirstPopup(false);
+      setShowSecondPopup(true);
+      setIsExiting(false);
+    }, 500);
+  };
 
   const handleUploadReceipt = () => {
     document.getElementById('fileInput').click();
@@ -80,25 +105,8 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const newReceiptUrl = URL.createObjectURL(file);
-      setReceiptFile(newReceiptUrl);
-      setReceiptUploaded(true);
-      
-      // Store the uploaded receipt in our mock database
-      if (selectedLiability) {
-        setReceiptStore(prev => ({
-          ...prev,
-          [selectedLiability.id]: newReceiptUrl
-        }));
-      }
-      
-      // transition between popups
-      setIsExiting(true);
-      setTimeout(() => {
-        setShowFirstPopup(false);
-        setShowSecondPopup(true);
-        setIsExiting(false);
-      }, 500);
+      setReceiptFile(file);
+      handleOcr(URL.createObjectURL(file));     
     }
   };
 
@@ -117,29 +125,42 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
     }, 500);
   };
 
-  const handleConfirmReceipt = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      setShowSecondPopup(false);
-      setIsExiting(false);
-      
-      // Update the liability status to "Under Review"
-      onStatusChange("Under Review");
-      
-      // Delay before showing the Payment Sent popup
+  const handleConfirmReceipt = async () => {
+    setLoading(true);
+
+    const { error } = await uploadReceiptAndInsertPayment({
+      userId: user.id, 
+      receiptFile: receiptFile, 
+      amount: amountEdit, 
+      refNo: refNoEdit, 
+      date: dateEdit, 
+      selectedLiabilityId: selectedLiability.id,
+    });
+
+    setLoading(false);
+    if (error) {
+      alert('Error');
+    } else {
+      setIsExiting(true);
       setTimeout(() => {
-        setShowPopup(true);
+        setShowSecondPopup(false);
+        setIsExiting(false);
         
-        // Handle auto-close 
+        // Delay before showing the Payment Sent popup
         setTimeout(() => {
-          setIsExiting(true);
+          setShowPopup(true);
+          
+          // Handle auto-close 
           setTimeout(() => {
-            setShowPopup(false);
-            onClose();
-          }, 500);
-        }, 4000);
-      }, 1000);
-    }, 500);
+            setIsExiting(true);
+            setTimeout(() => {
+              setShowPopup(false);
+              onClose();
+            }, 500);
+          }, 4000);
+        }, 1000);
+      }, 500);
+    }
   };
 
   // Animation configurations for popups
@@ -179,7 +200,7 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
   
   // Get the fee name from the liability
   const getFeeName = () => {
-    return selectedLiability?.feeName || selectedLiability?.name || "Computer Lab Fee";
+    return selectedLiability?.feeName || selectedLiability?.feeId.name || "Computer Lab Fee";
   };
 
   return (
@@ -210,8 +231,8 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
               <div className="absolute left-[342px] top-[348px] text-black text-base font-normal">
                 {selectedLiability?.accountName || 'John Doe'}<br />
                 {selectedLiability?.accountNumber || '1234567890'}<br />
-                ₱{selectedLiability?.amount || '0.00'}<br />
-                {formatDate(selectedLiability?.dueDate)}
+                ₱{(selectedLiability?.feeId.amount / 100).toFixed(2) || '0.00'}<br />
+                {formatDate(selectedLiability?.feeId.deadline)}
               </div>
 
               <div className="absolute left-[213px] top-[95px] w-[200px] h-[200px] border-4 border-maroon flex items-center justify-center">
@@ -231,13 +252,14 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
                 </button>
               </div>
 
-              <div className="absolute left-[344px] top-[474px] w-[143px] h-[46px] bg-yellow rounded-lg overflow-hidden">
+              <div className={`absolute left-[344px] top-[474px] w-[143px] h-[46px] rounded-lg overflow-hidden ${loading ? 'bg-gray-300' : 'bg-yellow'}`}>
                 <button 
+                  disabled={loading}
                   onClick={handleUploadReceipt} 
                   className="w-full h-full flex items-center justify-center text-black text-base font-normal transition-all duration-200 hover:bg-yellow-400 hover:shadow-md"
                   style={{ transition: "all 0.2s ease" }}
                 >
-                  {receiptUploaded ? 'Receipt Uploaded' : 'Upload Receipt'}
+                  {loading ? 'Processing...' : receiptUploaded ? 'Receipt Uploaded' : 'Upload Receipt'}
                 </button>
               </div>
 
@@ -309,7 +331,9 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
               {/* Receipt image area */}
               <div className="absolute left-[90px] top-[55px] w-[217px] h-[368px] rounded-[9px] border border-gray-300 overflow-hidden bg-gray-100 flex items-center justify-center">
                 {receiptFile ? (
-                  <img className="w-full h-full object-cover" src={receiptFile} alt="Uploaded Receipt" />
+                  <img className="w-full h-full object-cover" src={URL.createObjectURL(receiptFile)} alt="Uploaded Receipt" />
+                ) : receiptUrl ? (
+                  <img className="w-full h-full object-cover" src={receiptUrl} alt="Uploaded Receipt" />
                 ) : (
                   <div className="text-gray-500 text-center p-4">
                     {selectedLiability?.status !== "Unpaid" ? "Receipt Image" : "No receipt uploaded yet"}
@@ -324,13 +348,14 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
                 Payment for:<br />Account Name:<br />Account Number:<br />Reference Number:<br />Amount:<br />Date of Payment:
               </div>
 
+              {/* TODO: Make fields editable in case of incorrect OCR values */}
               <div className="absolute left-[522px] top-[139px] text-black text-base font-normal">
                 {getFeeName()}<br />
                 {selectedLiability?.accountName || 'John Doe'}<br />
                 {selectedLiability?.accountNumber || '1234567890'}<br />
-                {selectedLiability?.referenceNumber || 'REF123456'}<br />
-                ₱{selectedLiability?.amount || '0.00'}<br />
-                {formatDate(selectedLiability?.dueDate)}
+                {refNoEdit}<br />
+                ₱{((amountEdit) / 100).toFixed(2)}<br />
+                {formatDate(dateEdit)}
               </div>
             </motion.div>
           </motion.div>

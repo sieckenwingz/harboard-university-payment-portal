@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import PaymentPopup from "./PaymentPopup";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Calendar, Filter, Check, AlertTriangle, RefreshCw, X } from "lucide-react";
 import { supabase } from "../../App";
-import { getStatus } from "../../Utils";
+import { StudentFee } from "../../models/StudentFee";
 
 const LiabilitiesDashboard = () => {
   const [fees, setFees] = useState([])
@@ -63,24 +63,12 @@ const LiabilitiesDashboard = () => {
         .select('*, payment_id(*), fee_id(*)')
         .eq('student_id', user.id);
 
-      console.log(feesData);
-
       if (feesError) {
         console.error('Fees fetch error:', feesError)
       } else {
         const result = [];
-        feesData.forEach((fee, i) => {
-          result.push({
-            id: i,
-            name: fee['fee_id']['name'] ?? 'FEE',
-            type: "Membership Fee",
-            amount: fee['fee_id']['amount'],
-            dueDate: fee['fee_id']['deadline'],
-            status: getStatus(fee),
-            accountName: "John Doe",  // TODO:
-            accountNumber: "1234567890",  // TODO:
-            referenceNumber: `REF${200000 + i}`  // TODO:
-          });
+        feesData.forEach((fee, _) => {
+          result.push(new StudentFee(fee));
         });
         setFees(result);
       }
@@ -361,10 +349,10 @@ const LiabilitiesDashboard = () => {
                 className="w-full flex justify-between py-4 px-4 border-b cursor-pointer hover:bg-gray-50"
                 onClick={() => setSelectedLiability(item)}
               >
-                <span style={{ width: "25%" }} className="text-gray-700 font-medium">{item.name}</span>
-                <span style={{ width: "20%" }} className="text-gray-700">{item.type}</span>
-                <span style={{ width: "15%" }} className="text-gray-700">₱{item.amount / 100}</span>
-                <span style={{ width: "20%" }} className="text-gray-700">{item.dueDate != null ? formatDate(item.dueDate) : "No due date"}</span>
+                <span style={{ width: "25%" }} className="text-gray-700 font-medium">{item.feeId.name}</span>
+                <span style={{ width: "20%" }} className="text-gray-700">Membership Fee</span>
+                <span style={{ width: "15%" }} className="text-gray-700">₱{item.feeId.amount / 100}</span>
+                <span style={{ width: "20%" }} className="text-gray-700">{item.paymentId ? (item.paymentId.dueDate != null ? formatDate(item.dueDate) : "No due date")  : "No due date"}</span>
                 <span style={{ width: "20%" }} className="flex items-center">
                   <span 
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm ${statusStyle.bgColor} border ${statusStyle.borderColor}`} 

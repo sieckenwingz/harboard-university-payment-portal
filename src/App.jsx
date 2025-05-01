@@ -26,6 +26,7 @@ import StudentPayments from './components/AdminPortal/StudentPayments';
 import AddLiabilityPopup from './components/AdminPortal/AddLiabilityPopup';
 import EditLiabilityPopup from './components/AdminPortal/EditLiabilityPopup';
 
+import { AuthProvider } from './context/AuthContext';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -61,32 +62,34 @@ function App() {
   }, [])
 
   return (
-    <div className="app-container">
-      <Routes>
-        <Route path="/" element={<PublicRoute session={session}><LandingPage /></PublicRoute>} />
-        <Route path="/student-login" element={<PublicRoute session={session}><StudentLogin /></PublicRoute>} />
-        <Route path="/admin-login" element={<PublicRoute session={session}><AdminLogin /></PublicRoute>} />
-        <Route element={<ProtectedRoute session={session}><Layout /></ProtectedRoute>}>
-          <Route path="/dashboard" element={<LiabilitiesDashboard />} />
-          <Route path="/payment-history" element={<PaymentHistory />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/help" element={<Help />} />
-        </Route>
+    <AuthProvider>
+      <div className="app-container">
+        <Routes>
+          <Route path="/" element={<PublicRoute session={session}><LandingPage /></PublicRoute>} />
+          <Route path="/student-login" element={<PublicRoute session={session}><StudentLogin /></PublicRoute>} />
+          <Route path="/admin-login" element={<PublicRoute session={session}><AdminLogin /></PublicRoute>} />
+          <Route element={<ProtectedRoute session={session}><Layout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<LiabilitiesDashboard />} />
+            <Route path="/payment-history" element={<PaymentHistory />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/help" element={<Help />} />
+          </Route>
 
-        {/* TODO: Replace [PublicRoute] with [ProtectedRoute] after implementing */}
-        <Route element={<PublicRoute session={session}><AdminLayout /></PublicRoute>}>
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/admin-help" element={<AdminHelp />} />
-          <Route path="/management" element={<Management />} />
-          <Route path="/:departmentSlug-liabilities" element={<ManageDeptLiabs />} />
-          <Route path="/department-liabilities/:departmentId" element={<DepartmentLiabilities />} />
-          <Route path="/departments/:departmentId/liabilities/:liabilityId" element={<StudentPayments />} />
+          {/* TODO: Replace [PublicRoute] with [ProtectedRoute] after implementing */}
+          <Route element={<PublicRoute session={session}><AdminLayout /></PublicRoute>}>
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin-help" element={<AdminHelp />} />
+            <Route path="/management" element={<Management />} />
+            <Route path="/:departmentSlug-liabilities" element={<ManageDeptLiabs />} />
+            <Route path="/department-liabilities/:departmentId" element={<DepartmentLiabilities />} />
+            <Route path="/departments/:departmentId/liabilities/:liabilityId" element={<StudentPayments />} />
 
-          <Route path="/add-new-liability" element={<AddLiabilityPopup />} />
-          <Route path="/edit-liability" element={<EditLiabilityPopup />} />
-        </Route>
-      </Routes>
-    </div>
+            <Route path="/add-new-liability" element={<AddLiabilityPopup />} />
+            <Route path="/edit-liability" element={<EditLiabilityPopup />} />
+          </Route>
+        </Routes>
+      </div>
+    </AuthProvider>
   );
 }
 
