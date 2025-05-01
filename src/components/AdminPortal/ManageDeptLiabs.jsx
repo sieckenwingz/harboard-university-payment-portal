@@ -16,8 +16,8 @@ const ManageDeptLiabs = () => {
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [editingLiability, setEditingLiability] = useState(null);
   
-  const [department, setDepartment] = useState(
-    location.state?.department || "Computer Science"
+  const [organization, setOrganization] = useState(
+    location.state?.organization || "Computer Science"
   );
   
   const [liabilities, setLiabilities] = useState(
@@ -37,7 +37,7 @@ const ManageDeptLiabs = () => {
         type: "School Fee",
         amount: 5000,
         dueDate: "2025-05-20",
-        collector: "CS Department",
+        collector: "CS Organization",
         gcashNumber: "09987654321"
       }
     ]
@@ -52,7 +52,7 @@ const ManageDeptLiabs = () => {
         )
       );
       navigate(location.pathname, { 
-        state: { department, liabilities: [...liabilities] },
+        state: { organization, liabilities: [...liabilities] },
         replace: true 
       });
     }
@@ -138,9 +138,9 @@ const ManageDeptLiabs = () => {
   };
 
   useEffect(() => {
-    const currentState = { ...location.state, department, liabilities };
+    const currentState = { ...location.state, organization, liabilities };
     navigate(location.pathname, { state: currentState, replace: true });
-  }, [liabilities, department]);
+  }, [liabilities, organization]);
   
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -155,10 +155,10 @@ const ManageDeptLiabs = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {department} Liabilities
+            {organization} Liabilities
           </h1>
           <p className="text-gray-500">
-            Manage all financial liabilities for this department
+            Manage all financial liabilities for this organization
           </p>
         </div>
       </div>
@@ -186,7 +186,7 @@ const ManageDeptLiabs = () => {
       {/* Table Content */}
       {liabilities.length === 0 ? (
         <div className="w-full flex justify-center items-center h-32 text-gray-500 text-sm bg-gray-50 rounded-b-lg">
-          No liabilities found for this department.
+          No liabilities found for this organization.
         </div>
       ) : (
         <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
@@ -325,7 +325,7 @@ const ManageDeptLiabs = () => {
       {/* Add Liability Popup */}
       {showAddPopup && (
         <AddLiabilityPopup
-          department={department}
+          organization={organization}
           onClose={closeAddLiabilityPopup}
           onAddLiability={handleAddLiability}
         />
@@ -335,7 +335,7 @@ const ManageDeptLiabs = () => {
       {showEditPopup && editingLiability && (
         <EditLiabilityPopup
           liability={editingLiability}
-          department={department}
+          organization={organization}
           onClose={closeEditLiabilityPopup}
           onUpdateLiability={handleUpdateLiability}
         />

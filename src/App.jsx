@@ -18,7 +18,7 @@ import AdminDashboard from './components/AdminPortal/AdminDashboard';
 import AdminHelp from './components/AdminPortal/AdminHelp';
 import Management from './components/AdminPortal/Management';
 import ManageDeptLiabs from './components/AdminPortal/ManageDeptLiabs';
-import DepartmentLiabilities from './components/AdminPortal/DepartmentLiabilities';
+import OrganizationLiabilities from './components/AdminPortal/OrganizationLiabilities';
 import StudentPayments from './components/AdminPortal/StudentPayments';
 import AddLiabilityPopup from './components/AdminPortal/AddLiabilityPopup';
 import EditLiabilityPopup from './components/AdminPortal/EditLiabilityPopup';
@@ -119,9 +119,10 @@ function App() {
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/admin-help" element={<AdminHelp />} />
             <Route path="/management" element={<Management />} />
-            <Route path="/:departmentSlug-liabilities" element={<ManageDeptLiabs />} />
-            <Route path="/department-liabilities/:departmentId" element={<DepartmentLiabilities />} />
-            <Route path="/departments/:departmentId/liabilities/:liabilityId" element={<StudentPayments />} />
+            <Route path="/:organizationSlug-liabilities" element={<ManageDeptLiabs />} />
+            <Route path="/organization-liabilities/:organizationId" element={<OrganizationLiabilities />} />
+            <Route path="/organizations/:organizationId/liabilities/:liabilityId" element={<StudentPayments />} />
+
             <Route path="/add-new-liability" element={<AddLiabilityPopup />} />
             <Route path="/edit-liability" element={<EditLiabilityPopup />} />
           </Route>

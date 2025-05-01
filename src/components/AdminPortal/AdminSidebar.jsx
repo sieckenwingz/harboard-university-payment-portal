@@ -22,6 +22,8 @@ const AdminSidebar = () => {
   const adminData = {
     name: "Admin User",
     position: "System Administrator",
+    organization: "Student Affairs Office",
+    avatar: "A", 
     organization: "Student Affairs Office", 
     avatar: "A",
   };
@@ -40,8 +42,8 @@ const AdminSidebar = () => {
     }
     
     if (path === "/admin-dashboard" || 
-        path.startsWith("/organization-liabilities/") || 
-        (path.includes("/organizations/") && path.includes("/liabilities/"))) {
+        path.startsWith("/department-liabilities/") ||
+        (path.includes("/departments/") && path.includes("/liabilities/"))) {
       return "Liabilities";
     }
     

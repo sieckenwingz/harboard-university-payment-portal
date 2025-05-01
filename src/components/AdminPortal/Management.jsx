@@ -12,28 +12,19 @@ const Management = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("liabilities");
-  const [departmentFilter, setDepartmentFilter] = useState("All Departments");
+  const [organizationFilter, setOrganizationFilter] = useState("All Organizations");
   const [liabilityFilter, setLiabilityFilter] = useState("All Liabilities");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   
-  // dumy data lang hehe
-  // dept names
-  const academicDepartments = [
-    "College of Engineering",
-    "College of Business",
-    "College of Arts and Sciences",
-    "College of Education",
-    "College of Medicine",
-    "College of Law",
-    "College of Architecture",
-    "College of Agriculture",
-    "College of Fine Arts",
-    "College of Information Technology"
+  const academicOrganizations = [
+    "SSC",
+    "COE",
+    "CURSOR",
   ];
   
-  // sample liabilities data per department
-  const generateDepartmentLiabilities = () => {
+  // sample liabilities data per organization
+  const generateOrganizationLiabilities = () => {
     const liabilityTypes = [
       "School Fee", 
       "Membership Fee"
@@ -58,10 +49,10 @@ const Management = () => {
     
     const result = [];
     
-    // liabss for each department
-    academicDepartments.forEach((dept) => {
+    // liabss for each organization
+    academicOrganizations.forEach((org) => {
       const liabilityCount = Math.floor(Math.random() * 5) + 1;
-      const departmentLiabilities = [];
+      const organizationLiabilities = [];
       
       for (let j = 0; j < liabilityCount; j++) {
         const typeKey = liabilityTypes[Math.floor(Math.random() * liabilityTypes.length)];
@@ -72,8 +63,8 @@ const Management = () => {
         const dueDate = new Date(today);
         dueDate.setDate(today.getDate() + Math.floor(Math.random() * 60) + 30);
         
-        departmentLiabilities.push({
-          id: `${dept}-${j}`,
+        organizationLiabilities.push({
+          id: `${org}-${j}`,
           name: nameOptions[nameIndex],
           type: typeKey,
           amount: amount,
@@ -85,9 +76,9 @@ const Management = () => {
       }
       
       result.push({
-        department: dept,
-        liabilities: departmentLiabilities,
-        count: departmentLiabilities.length
+        organization: org,
+        liabilities: organizationLiabilities,
+        count: organizationLiabilities.length
       });
     });
     
@@ -132,7 +123,7 @@ const Management = () => {
     
     // dummy data for student payments
     for (let i = 0; i < 25; i++) {
-      const deptIndex = Math.floor(Math.random() * academicDepartments.length);
+      const orgIndex = Math.floor(Math.random() * academicOrganizations.length);
       const typeKey = liabilityTypes[Math.floor(Math.random() * liabilityTypes.length)];
       const nameOptions = liabilityNames[typeKey];
       const nameIndex = Math.floor(Math.random() * nameOptions.length);
@@ -150,7 +141,7 @@ const Management = () => {
         id: i + 1,
         studentId: `2025-${Math.floor(Math.random() * 10000) + 1000}`,
         studentName: `Student ${i + 1}`,
-        department: academicDepartments[deptIndex],
+        organization: academicOrganizations[orgIndex],
         liabilityName: nameOptions[nameIndex],
         liabilityType: typeKey,
         amount: amount,
@@ -170,12 +161,12 @@ const Management = () => {
     return result;
   };
   
-  const [departmentLiabilities, setDepartmentLiabilities] = useState([]);
+  const [organizationLiabilities, setOrganizationLiabilities] = useState([]);
   const [studentPayments, setStudentPayments] = useState([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDepartmentLiabilities(generateDepartmentLiabilities());
+      setOrganizationLiabilities(generateOrganizationLiabilities());
       setStudentPayments(generateStudentPayments());
       setIsLoading(false);
     }, 800);
@@ -184,8 +175,8 @@ const Management = () => {
 
   const rowsPerPage = 5;
 
-  const handleDepartmentFilterChange = (e) => {
-    setDepartmentFilter(e.target.value);
+  const handleOrganizationFilterChange = (e) => {
+    setOrganizationFilter(e.target.value);
   };
 
   const handleLiabilityFilterChange = (e) => {
@@ -196,11 +187,11 @@ const Management = () => {
     setStatusFilter(e.target.value);
   };
 
-  const navigateToManageDeptLiabs = (department) => {
-    navigate(`/${department.replace(/\s+/g, '-').toLowerCase()}-liabilities`, { 
+  const navigateToManageDeptLiabs = (organization) => {
+    navigate(`/${organization.replace(/\s+/g, '-').toLowerCase()}-liabilities`, { 
       state: { 
-        department: department,
-        liabilities: departmentLiabilities.find(d => d.department === department)?.liabilities || []
+        organization: organization,
+        liabilities: organizationLiabilities.find(d => d.organization === organization)?.liabilities || []
       } 
     });
   };
@@ -217,15 +208,15 @@ const Management = () => {
     setSelectedReceipt(null);
   };
 
-  const filteredDepartments = departmentLiabilities.filter((item) => {
-    if (searchTerm && !item.department.toLowerCase().includes(searchTerm.toLowerCase())) {
+  const filteredOrganizations = organizationLiabilities.filter((item) => {
+    if (searchTerm && !item.organization.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     return true;
   });
 
   const filteredStudentPayments = studentPayments.filter((item) => {
-    if (departmentFilter !== "All Departments" && item.department !== departmentFilter) {
+    if (organizationFilter !== "All Organizations" && item.organization !== organizationFilter) {
       return false;
     }
 
@@ -245,7 +236,7 @@ const Management = () => {
     return true;
   });
 
-  let displayData = activeTab === "liabilities" ? [...filteredDepartments] : [...filteredStudentPayments];
+  let displayData = activeTab === "liabilities" ? [...filteredOrganizations] : [...filteredStudentPayments];
 
   const totalPages = Math.ceil(displayData.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -264,13 +255,13 @@ const Management = () => {
     setActiveTab(tab);
     setCurrentPage(1);
     setSearchTerm("");
-    setDepartmentFilter("All Departments");
+    setOrganizationFilter("All Organizations");
     setLiabilityFilter("All Liabilities");
     setStatusFilter("All Status");
   };
 
-  const getDepartmentOptions = () => {
-    return ["All Departments", ...academicDepartments];
+  const getOrganizationOptions = () => {
+    return ["All Organizations", ...academicOrganizations];
   };
 
   const getLiabilityOptions = () => {
@@ -312,7 +303,7 @@ const Management = () => {
           }`}
           onClick={() => changeTab("liabilities")}
         >
-          Department Liabilities
+          Organization Liabilities
         </button>
         <button
           className={`py-3 px-6 text-base transition-all duration-200 ease-in-out ${
@@ -326,7 +317,7 @@ const Management = () => {
         </button>
       </div>
 
-      {/* Department Liabilities Tab Content */}
+      {/* Organization Liabilities Tab Content */}
       {activeTab === "liabilities" && (
         <>
           <div className="relative flex-grow">
@@ -334,7 +325,7 @@ const Management = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search department..."
+              placeholder="Search organization..."
               className="pl-10 pr-4 py-2 border rounded-md text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
             />
             <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
@@ -342,7 +333,7 @@ const Management = () => {
 
           {/* Table Header */}
           <div className="w-full flex justify-between py-4 mt-6 border-b bg-gray-50 px-4 rounded-t-lg">
-            <span style={{ width: "70%" }} className="text-gray-700 font-semibold">DEPARTMENT</span>
+            <span style={{ width: "70%" }} className="text-gray-700 font-semibold">ORGANIZATION</span>
             <span style={{ width: "30%" }} className="text-gray-700 font-semibold">LIABILITIES ASSIGNED</span>
           </div>
 
@@ -352,21 +343,21 @@ const Management = () => {
             </div>
           ) : currentData.length === 0 ? (
             <div className="w-full flex justify-center items-center h-32 text-gray-500 text-sm bg-gray-50 rounded-b-lg">
-              No departments found.
+              No organizations found.
             </div>
           ) : (
             <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
-              {currentData.map((department) => (
+              {currentData.map((organization) => (
                 <div
-                  key={department.department}
+                  key={organization.organization}
                   className="w-full flex justify-between py-4 px-4 border-b hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigateToManageDeptLiabs(department.department)}
+                  onClick={() => navigateToManageDeptLiabs(organization.organization)}
                 >
                   <span style={{ width: "70%" }} className="text-gray-700 font-medium">
-                    {department.department}
+                    {organization.organization}
                   </span>
                   <span style={{ width: "30%" }} className="text-maroon">
-                    {department.count} liabilities assigned
+                    {organization.count} liabilities assigned
                   </span>
                 </div>
               ))}
@@ -382,12 +373,12 @@ const Management = () => {
             <div className="flex gap-2 items-center">
               <div className="relative">
                 <select
-                  value={departmentFilter}
-                  onChange={handleDepartmentFilterChange}
+                  value={organizationFilter}
+                  onChange={handleOrganizationFilterChange}
                   className="pl-8 pr-6 py-2 border rounded-md text-gray-700 w-auto appearance-none focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
                 >
-                  {getDepartmentOptions().map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                  {getOrganizationOptions().map(org => (
+                    <option key={org} value={org}>{org}</option>
                   ))}
                 </select>
                 <Filter className="absolute left-2 top-2.5 text-gray-500" size={18} />
@@ -442,7 +433,7 @@ const Management = () => {
           {/* Table Header */}
           <div className="w-full flex justify-between py-4 mt-6 border-b bg-gray-50 px-4 rounded-t-lg">
             <span style={{ width: "20%" }} className="text-gray-700 font-semibold">STUDENT NAME</span>
-            <span style={{ width: "30%" }} className="text-gray-700 font-semibold">DEPARTMENT</span>
+            <span style={{ width: "30%" }} className="text-gray-700 font-semibold">ORGANIZATION</span>
             <span style={{ width: "20%" }} className="text-gray-700 font-semibold">LIABILITY NAME</span>
             <span style={{ width: "15%" }} className="text-gray-700 font-semibold">STATUS</span>
             <span style={{ width: "15%" }} className="text-gray-700 font-semibold">PAYMENT DATE</span>
@@ -469,7 +460,7 @@ const Management = () => {
                     <div className="text-xs text-gray-500">{payment.studentId}</div>
                   </span>
                   <span style={{ width: "30%" }} className="text-gray-700">
-                    {payment.department}
+                    {payment.organization}
                   </span>
                   <span style={{ width: "20%" }} className="text-gray-700">
                     {payment.liabilityName}
