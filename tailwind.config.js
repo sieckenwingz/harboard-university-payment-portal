@@ -4,6 +4,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        roboto: ['Roboto', 'sans-serif'],
+        tinos: ['Tinos', 'serif'],
+      },
       colors: {
         yellow: "var(--yellow)",
         maroon: "var(--maroon)",
