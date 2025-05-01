@@ -234,8 +234,6 @@ const AdminSidebar = () => {
               <div className="flex justify-between">
                 <span className="text-gray-500">Organization</span>
                 <span className="font-medium">{adminData.organization}</span>
-                <span className="text-gray-500">Organization</span>
-                <span className="font-medium">{adminData.organization}</span>
               </div>
             </div>
 
