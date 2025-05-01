@@ -1,67 +1,20 @@
 import React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from './../../App'
 
 const StudentLogin = () => {
-  const [srCode, setSrCode] = useState("");
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Mock user database for demonstration
-  const mockUsers = [
-    { srCode: "22-04756", password: "password123" },
-    { srCode: "22-02812", password: "test123" }
-  ];
-
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!srCode.trim()) {
-      newErrors.srCode = "SR-code is required";
-    }
-    
-    if (!password) {
-      newErrors.password = "Password is required";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleLogin = () => {
-    if (!validateForm()) {
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-      const user = mockUsers.find(
-        user => user.srCode === srCode && user.password === password
-      );
-      
-      if (user) {
-        console.log("Logging in with:", { srCode, password, rememberMe });
-        // Store user data in local storage if remember me is checked
-        if (rememberMe) {
-          localStorage.setItem("srCode", srCode);
-        }
-        navigate("/dashboard");
-      } else {
-        // Check if the SR-code exists but password is wrong
-        const srCodeExists = mockUsers.some(user => user.srCode === srCode);
-        if (srCodeExists) {
-          setErrors({ auth: "Invalid password" });
-        } else {
-          setErrors({ auth: "SR-code not registered" });
-        }
-      }
-      setIsLoading(false);
-    }, 800);
+    console.log("Logging in with:", { srCode, password, rememberMe });
+    navigate("/dashboard");
   };
 
   return (
@@ -88,23 +41,16 @@ const StudentLogin = () => {
           )}
 
           {/* sr input */}
-          <div className="w-full mt-4 md:mt-6">
-            <label className="text-[#1f1f1f] text-base md:text-lg font-normal">
+          <div className="w-full mt-6">
+            <label className="text-[#1f1f1f] text-lg sm:text-xl font-normal">
               SR-code
             </label>
             <input
               type="text"
-              className={`w-full mt-2 p-2 md:p-3 bg-[#f7f6ff] rounded-lg shadow-inner text-base md:text-lg ${
-                errors.srCode ? "border border-red-500" : ""
-              }`}
+              className="w-full mt-2 p-3 bg-[#f7f6ff] rounded-lg shadow-inner text-lg"
               placeholder="Enter your SR-code"
               value={srCode}
-              onChange={(e) => {
-                setSrCode(e.target.value);
-                if (errors.srCode || errors.auth) {
-                  setErrors((prev) => ({ ...prev, srCode: "", auth: "" }));
-                }
-              }}
+              onChange={(e) => setSrCode(e.target.value)}
             />
             {errors.srCode && (
               <p className="text-red-500 text-xs mt-1">{errors.srCode}</p>
@@ -156,20 +102,9 @@ const StudentLogin = () => {
           {/* login button */}
           <button
             onClick={handleLogin}
-            disabled={isLoading}
-            className="w-full sm:w-40 h-10 md:h-12 mt-4 md:mt-6 bg-[#f3ce73] rounded-lg text-[#1f1f1f] text-base md:text-lg font-normal hover:bg-[#e3be63] transition disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full sm:w-40 h-12 mt-6 bg-[#f3ce73] rounded-lg text-[#1f1f1f] text-lg sm:text-xl font-normal hover:bg-[#e3be63] transition"
           >
-            {isLoading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Loading...
-              </span>
-            ) : (
-              "Login"
-            )}
+            Login
           </button>
         </div>
       </div>

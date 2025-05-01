@@ -1,6 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-
 import LandingPage from './components/LandingPage/LandingPage';
 
 import Layout from './components/StudentPortal/Layout';
@@ -9,32 +8,47 @@ import LiabilitiesDashboard from './components/StudentPortal/LiabilitiesDashboar
 import PaymentHistory from './components/StudentPortal/PaymentHistory';
 import Notifications from './components/StudentPortal/Notifications';
 import Help from './components/StudentPortal/Help';
-
-import AdminLayout from './components/AdminPortal/AdminLayout';
-import AdminLogin from './components/AdminPortal/AdminLogin';
-import AdminHelp from './components/AdminPortal/AdminHelp';
-import AdminDashboard from './components/AdminPortal/AdminDashboard';
-import Management from './components/AdminPortal/Management';
-import DepartmentLiabilities from './components/AdminPortal/DepartmentLiabilities';
-import StudentPayments from './components/AdminPortal/StudentPayments';
-import ManageDeptLiabs from './components/AdminPortal/ManageDeptLiabs';
-import AddLiabilityPopup from './components/AdminPortal/AddLiabilityPopup';
-import EditLiabilityPopup from './components/AdminPortal/EditLiabilityPopup';
-// import PaymentReceiptModal from './components/AdminPortal/PaymentReceiptModal';
-// import TransactionProcessingModal from './components/AdminPortal/TransactionProcessingModal';
-// import ConfirmationModal from './components/AdminPortal/ConfirmationModal';
-
-
 import './App.css';
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+function ProtectedRoute({ session, children }) {
+  return session ? children : <Navigate to="/" replace />
+}
+
+function PublicRoute({ session, children }) {
+  return session ? <Navigate to="/dashboard" replace /> : children
+}
+
 function App() {
+  const [session, setSession] = useState(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      if (session) {
+        navigate('/dashboard')
+      } else {
+        navigate('/')
+      }
+    })
+
+    return () => listener?.subscription.unsubscribe()
+  }, [])
+  
   return (
     <div className="app-container">
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/student-login" element={<StudentLogin />} />
         <Route path="/admin-login" element={<AdminLogin />} />
-
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<LiabilitiesDashboard />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
