@@ -6,6 +6,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react";
 import AddLiabilityPopup from "./AddLiabilityPopup";
 import EditLiabilityPopup from "./EditLiabilityPopup";
+import { getFeesByOrganization } from "../../helpers/FeeHelpers";
+import { Fee } from "../../models/Fee";
+import { updateFee, getFeeById } from "../../helpers/FeeHelpers"; // import para sa editliab
+import { LiabilityType, AcademicYear } from "../../models/Fee";
+import { deleteFee } from "../../helpers/FeeHelpers";
+
 
 const ManageDeptLiabs = () => {
   const location = useLocation();
@@ -44,19 +50,32 @@ const ManageDeptLiabs = () => {
   );
   
   useEffect(() => {
-    if (location.state?.updatedLiability) {
-      const updatedLiability = location.state.updatedLiability;
-      setLiabilities(prevLiabilities => 
-        prevLiabilities.map(item => 
-          item.id === updatedLiability.id ? updatedLiability : item
-        )
-      );
-      navigate(location.pathname, { 
-        state: { organization, liabilities: [...liabilities] },
-        replace: true 
-      });
-    }
-  }, [location.state?.updatedLiability]);
+    const fetchLiabilities = async () => {
+      // Get organization ID from location.state
+      const orgId = location.state?.organizationId;
+  
+      if (orgId) {
+        const fees = await getFeesByOrganization(orgId);
+        
+        if (fees) {
+          // Map Fee objects to the format expected by your component
+          const mappedLiabilities = fees.map(fee => ({
+            id: fee.id.toString(),
+            name: fee.name,
+            type: fee.type,
+            amount: fee.amount, // This is in cents, you may need to divide by 100
+            dueDate: fee.deadline ? fee.deadline.toISOString() : null,
+            collector: fee.collectorName,
+            gcashNumber: fee.accountNumber
+          }));
+          
+          setLiabilities(mappedLiabilities);
+        }
+      }
+    };
+    
+    fetchLiabilities();
+  }, [location.state?.organizationId]);
   
   const rowsPerPage = 5;
   const totalPages = Math.ceil(liabilities.length / rowsPerPage);
@@ -76,23 +95,124 @@ const ManageDeptLiabs = () => {
     navigate(-1);
   };
   
-  const handleEditLiability = (liability, e) => {
+  const handleEditLiability = async (liability, e) => {
     if (e) e.preventDefault();
     if (e) e.stopPropagation();
     
-    setEditingLiability({ ...liability });
-    setShowEditPopup(true);
+    // If the liability data contains only basic info, fetch complete data
+    try {
+      // Fetch the complete fee record if not already available
+      const completeData = await getFeeById(parseInt(liability.id));
+      
+      if (completeData) {
+        // Load the complete data into the editing state
+        setEditingLiability({
+          id: completeData.id.toString(),
+          name: completeData.name,
+          type: completeData.type,
+          academicYear: completeData.academicYear,
+          period: completeData.periodId.toString(), // Adjust according to your data structure
+          amount: completeData.amount / 100, // Convert from cents to display amount
+          dueDate: completeData.deadline ? completeData.deadline.toISOString().split('T')[0] : '',
+          collector: completeData.collectorName,
+          gcashNumber: completeData.accountNumber,
+          qrCode: completeData.qrCode
+        });
+      } else {
+        // Fallback to the provided data if fetching fails
+        setEditingLiability({ ...liability });
+      }
+      
+      setShowEditPopup(true);
+    } catch (error) {
+      console.error("Error fetching complete liability data:", error);
+      // Even if we can't get complete data, still allow editing with available data
+      setEditingLiability({ ...liability });
+      setShowEditPopup(true);
+    }
   };
   
-  const handleUpdateLiability = (updatedLiability) => {
-    setLiabilities(prevLiabilities => 
-      prevLiabilities.map(item => 
-        item.id === updatedLiability.id ? updatedLiability : item
-      )
-    );
-    
-    setShowEditPopup(false);
-    setEditingLiability(null);
+  const handleUpdateLiability = async (updatedLiabilityData) => {
+    try {
+      console.log("Raw updated data:", updatedLiabilityData); // Debug log
+      
+      // Convert the form data to match the expected format in your database
+      const feeUpdates = {
+        name: updatedLiabilityData.name,
+        type: updatedLiabilityData.type,
+        academicYear: updatedLiabilityData.academicYear,
+        amount: Math.round(parseFloat(updatedLiabilityData.amount)), // Convert to cents for database
+        deadline: updatedLiabilityData.dueDate, 
+        collectorName: updatedLiabilityData.collector,
+        accountNumber: updatedLiabilityData.gcashNumber,
+        periodId: parseInt(updatedLiabilityData.period) // Make sure period is an integer
+      };
+  
+      console.log("Formatted updates being sent to database:", feeUpdates);
+  
+      // If there's a new QR code file
+      const qrCodeFile = updatedLiabilityData.qrCode instanceof File ? 
+                         updatedLiabilityData.qrCode : null;
+  
+      // Call the update function with stringified ID to ensure it's parsed correctly
+      const success = await updateFee(
+        parseInt(updatedLiabilityData.id), 
+        feeUpdates, 
+        qrCodeFile
+      );
+  
+      if (success) {
+        console.log("Database update successful");
+        
+        // Refresh the data from the server instead of just updating local state
+        // This ensures the UI displays what's actually in the database
+        const refreshedFees = await getFeesByOrganization(parseInt(formData.organizationId));
+        if (refreshedFees) {
+          const mappedLiabilities = refreshedFees.map(fee => ({
+            id: fee.id.toString(),
+            name: fee.name,
+            type: fee.type,
+            academicYear: fee.academicYear,
+            period: fee.periodId.toString(),
+            amount: fee.amount / 100, // Convert cents to display amount
+            dueDate: fee.deadline ? fee.deadline.toISOString().split('T')[0] : null,
+            collector: fee.collectorName,
+            gcashNumber: fee.accountNumber,
+            qrCode: fee.qrCode
+          }));
+          
+          setLiabilities(mappedLiabilities);
+        } else {
+          // Fallback to updating local state if refresh fails
+          setLiabilities(prevLiabilities => 
+            prevLiabilities.map(item => 
+              item.id === updatedLiabilityData.id ? {
+                ...item,
+                name: updatedLiabilityData.name,
+                type: updatedLiabilityData.type,
+                academicYear: updatedLiabilityData.academicYear,
+                period: updatedLiabilityData.period,
+                amount: updatedLiabilityData.amount,
+                dueDate: updatedLiabilityData.dueDate,
+                collector: updatedLiabilityData.collector,
+                gcashNumber: updatedLiabilityData.gcashNumber,
+                qrCode: updatedLiabilityData.qrCode
+              } : item
+            )
+          );
+        }
+        
+        // Close the popup
+        setShowEditPopup(false);
+        setEditingLiability(null);
+      } else {
+        console.error("Failed to update liability in the database");
+        alert("Failed to update liability. Please check console for errors.");
+      }
+    } catch (error) {
+      console.error("Error updating liability:", error);
+      alert("Error updating liability: " + error.message);
+    }
   };
   
   const openAddLiabilityPopup = () => {
@@ -121,15 +241,33 @@ const ManageDeptLiabs = () => {
     setDeleteModal({ show: true, liability });
   };
   
-  const confirmDeleteLiability = () => {
-    setLiabilities(liabilities.filter(item => item.id !== deleteModal.liability.id));
-
-    setDeleteModal({ show: false, liability: null });
-
-    const remainingItems = liabilities.length - 1;
-    const newTotalPages = Math.ceil(remainingItems / rowsPerPage);
-    if (currentPage > newTotalPages && currentPage > 1) {
-      setCurrentPage(newTotalPages);
+  const confirmDeleteLiability = async () => {
+    try {
+      // Delete from database
+      const success = await deleteFee(parseInt(deleteModal.liability.id));
+      
+      if (success) {
+        console.log("Successfully deleted liability from the database");
+        
+        // Update UI state
+        setLiabilities(liabilities.filter(item => item.id !== deleteModal.liability.id));
+        
+        // Reset delete modal
+        setDeleteModal({ show: false, liability: null });
+        
+        // Update pagination if needed
+        const remainingItems = liabilities.length - 1;
+        const newTotalPages = Math.ceil(remainingItems / rowsPerPage);
+        if (currentPage > newTotalPages && currentPage > 1) {
+          setCurrentPage(newTotalPages);
+        }
+      } else {
+        console.error("Failed to delete liability from the database");
+        // Show error message
+      }
+    } catch (error) {
+      console.error("Error deleting liability:", error);
+      // Show error message
     }
   };
 
