@@ -1,10 +1,9 @@
-// 1st nav sa liabilities sidebar
-// organization overview
-
+// src/components/AdminPortal/AdminDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Users, Clock, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import ViewDetailsPopup from "./ViewDetailsPopup"; 
+import { supabase } from "../../App";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -14,38 +13,103 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState(null); 
+  const [organizations, setOrganizations] = useState([]);
+  const [debug, setDebug] = useState(null); // For debugging
   
-  const universityOrganizations = [
-    "SSC",
-    "COE",
-    "CURSOR",
-  ];
-  
-  const generateOrganizations = () => {
-    const result = [];
-    // organizations
-    universityOrganizations.forEach((dept, i) => {
-      result.push({
-        id: i + 1,
-        name: dept,
-        type: "Academic Organization",
-        pendingVerifications: Math.floor(Math.random() * 30) + 1,
-        lastUpdate: `2025-04-${(i % 25) + 1}`
-      });
-    });
+  // Fetch organizations with direct database query
+  const fetchOrganizationsDirectly = async () => {
+    setIsLoading(true);
     
-    return result;
+    try {
+      console.log("Fetching organizations directly");
+      
+      // 1. First get all organizations
+      const { data: orgs, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name');
+        
+      if (orgError) {
+        console.error('Error fetching organizations:', orgError);
+        setDebug({ error: 'Failed to fetch organizations', details: orgError });
+        return;
+      }
+      
+      console.log('Organizations from database:', orgs);
+      setDebug({ organizations: orgs });
+      
+      // 2. Get all fees from database to count
+      const { data: allFees, error: feesError } = await supabase
+        .from('fees')
+        .select('*');
+      
+      if (feesError) {
+        console.error('Error fetching fees:', feesError);
+        setDebug(prev => ({ ...prev, feesError }));
+        return;
+      }
+      
+      console.log('All fees from database:', allFees);
+      setDebug(prev => ({ ...prev, allFees }));
+      
+      // 3. Process each organization to count its fees
+      const orgsWithPendingCounts = orgs.map(org => {
+        // Filter fees by this organization ID
+        const orgFees = allFees.filter(fee => fee.organization_id === org.id);
+        const pendingCount = orgFees.length; // Count total fees for this organization
+        
+        return {
+          id: org.id,
+          name: org.name, 
+          type: "Academic Organization",
+          pendingVerifications: pendingCount,
+          lastUpdate: new Date().toISOString().split('T')[0]
+        };
+      });
+      
+      console.log('Organizations with pending counts:', orgsWithPendingCounts);
+      setDebug(prev => ({ ...prev, orgsWithPendingCounts }));
+      
+      setOrganizations(orgsWithPendingCounts);
+    } catch (error) {
+      console.error('Error in fetchOrganizationsDirectly:', error);
+      setDebug(prev => ({ ...prev, fetchError: error.message }));
+      
+      // Use fallback data if needed
+      const fallbackOrgs = [
+        {
+          id: 1,
+          name: "Student Services Center",
+          type: "Academic Organization",
+          pendingVerifications: 5,
+          lastUpdate: new Date().toISOString().split('T')[0]
+        },
+        {
+          id: 2,
+          name: "College of Engineering",
+          type: "Academic Organization",
+          pendingVerifications: 3,
+          lastUpdate: new Date().toISOString().split('T')[0]
+        },
+        {
+          id: 3,
+          name: "Computer Science Research Society",
+          type: "Academic Organization",
+          pendingVerifications: 2,
+          lastUpdate: new Date().toISOString().split('T')[0]
+        }
+      ];
+      
+      setOrganizations(fallbackOrgs);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
-  const [organizations, setOrganizations] = useState(generateOrganizations());
-
   useEffect(() => {
-    // loading data simulation
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    fetchOrganizationsDirectly();
   }, []);
+  
+
 
   const rowsPerPage = 5;
 
@@ -61,37 +125,37 @@ const AdminDashboard = () => {
     );
   };
 
-  //to navigate to organization liabilities page
+  // Navigate to organization liabilities page
   const navigateToOrganizationLiabilities = (organization) => {
     navigate(`/organization-liabilities/${organization.id}`, { state: { organization } });
   };
 
-  //to open popup with organization details
+  // Open popup with organization details
   const openOrganizationPopup = (organization, e) => {
     e.stopPropagation(); // Stop event propagation to prevent row click
     setSelectedOrganization(organization);
     setShowPopup(true);
   };
 
-  // to close popup
+  // Close popup
   const closePopup = () => {
     setShowPopup(false);
     setSelectedOrganization(null);
   };
 
-  //to handle data changes from popup if needed
+  // Handle data changes from popup if needed
   const handlePopupDataChange = (organizationId, newData) => {
     updateOrganizationData(organizationId, newData);
     closePopup();
   };
 
   const filteredOrganizations = organizations.filter((item) => {
-    // filter by verification status (High, Medium, Low)
+    // Filter by verification status (High, Medium, Low)
     if (statusFilter === "High Priority" && item.pendingVerifications < 20) return false;
     if (statusFilter === "Medium Priority" && (item.pendingVerifications < 10 || item.pendingVerifications >= 20)) return false;
     if (statusFilter === "Low Priority" && item.pendingVerifications >= 10) return false;
     
-    // filter by search term
+    // Filter by search term
     if (searchTerm &&
       !item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       !item.type.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -145,7 +209,7 @@ const AdminDashboard = () => {
 
   const summary = getSummary();
 
-  // date format
+  // Format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -290,7 +354,7 @@ const AdminDashboard = () => {
 
       <div className="w-full flex items-center justify-between mt-6 px-4">
         <span className="text-sm text-gray-600">
-          Showing page {currentPage} of {totalPages}
+          Showing page {currentPage} of {totalPages || 1}
         </span>
         <div className="flex gap-2">
           <button
@@ -305,14 +369,14 @@ const AdminDashboard = () => {
           
           {/* Page Numbers */}
           <div className="flex">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            {Array.from({ length: Math.min(5, totalPages || 1) }, (_, i) => {
               const pageNum = currentPage <= 3 
                 ? i + 1 
-                : currentPage >= totalPages - 2 
-                  ? totalPages - 4 + i 
+                : currentPage >= (totalPages || 1) - 2 
+                  ? (totalPages || 1) - 4 + i 
                   : currentPage - 2 + i;
               
-              if (pageNum <= totalPages && pageNum > 0) {
+              if (pageNum <= (totalPages || 1) && pageNum > 0) {
                 return (
                   <button
                     key={pageNum}
@@ -332,10 +396,10 @@ const AdminDashboard = () => {
           </div>
           
           <button
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages || 1, prev + 1))}
+            disabled={currentPage === (totalPages || 1)}
             className={`p-2 px-4 rounded-lg shadow border text-sm flex items-center ${
-              currentPage === totalPages ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-600 hover:bg-gray-100"
+              currentPage === (totalPages || 1) ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-600 hover:bg-gray-100"
             }`}
           >
             Next <ChevronRight size={16} className="ml-1" />

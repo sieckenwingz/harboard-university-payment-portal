@@ -1,17 +1,10 @@
-// 2nd nav sa management
-// "dept name" - liabilities
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react";
 import AddLiabilityPopup from "./AddLiabilityPopup";
 import EditLiabilityPopup from "./EditLiabilityPopup";
-import { getFeesByOrganization } from "../../helpers/FeeHelpers";
-import { Fee } from "../../models/Fee";
-import { updateFee, getFeeById } from "../../helpers/FeeHelpers"; // import para sa editliab
-import { LiabilityType, AcademicYear } from "../../models/Fee";
-import { deleteFee } from "../../helpers/FeeHelpers";
-
+import { supabase } from "../../App";
+import { updateFee, getFeeById, deleteFee } from "../../helpers/FeeHelpers";
 
 const ManageDeptLiabs = () => {
   const location = useLocation();
@@ -21,61 +14,117 @@ const ManageDeptLiabs = () => {
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [editingLiability, setEditingLiability] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   
+  // Preserve the organization information from location state
   const [organization, setOrganization] = useState(
     location.state?.organization || "Computer Science"
   );
   
-  const [liabilities, setLiabilities] = useState(
-    location.state?.liabilities || [
-      {
-        id: "1",
-        name: "Tuition Fee",
-        type: "School Fee",
-        amount: 15000,
-        dueDate: "2025-05-15",
-        collector: "Finance Office",
-        gcashNumber: "09123456789"
-      },
-      {
-        id: "2",
-        name: "Laboratory Fee",
-        type: "School Fee",
-        amount: 5000,
-        dueDate: "2025-05-20",
-        collector: "CS Organization",
-        gcashNumber: "09987654321"
-      }
-    ]
+  const [organizationId, setOrganizationId] = useState(
+    location.state?.organizationId || null
   );
   
-  useEffect(() => {
-    const fetchLiabilities = async () => {
-      // Get organization ID from location.state
-      const orgId = location.state?.organizationId;
-  
-      if (orgId) {
-        const fees = await getFeesByOrganization(orgId);
+  const [liabilities, setLiabilities] = useState([]);
+
+  // Critical function - fetch liabilities directly from the database
+  const fetchLiabilities = async () => {
+    setIsLoading(true);
+    
+    // Try to get organization ID from location state
+    let orgId = organizationId;
+    if (!orgId) {
+      if (location.state?.organizationId) {
+        // If organizationId is directly provided
+        orgId = location.state.organizationId;
+        setOrganizationId(orgId);
+      } else if (location.state?.organization?.id) {
+        // If organization object is provided with id
+        orgId = location.state.organization.id;
+        setOrganizationId(orgId);
+      } else {
+        // If neither is available, try to determine from URL
+        const urlParts = window.location.pathname.split('-');
+        const orgName = urlParts[0].replace('/', '');
         
-        if (fees) {
-          // Map Fee objects to the format expected by your component
-          const mappedLiabilities = fees.map(fee => ({
-            id: fee.id.toString(),
-            name: fee.name,
-            type: fee.type,
-            amount: fee.amount, // This is in cents, you may need to divide by 100
-            dueDate: fee.deadline ? fee.deadline.toISOString() : null,
-            collector: fee.collectorName,
-            gcashNumber: fee.accountNumber
-          }));
-          
-          setLiabilities(mappedLiabilities);
+        // Fetch organization ID from name if possible
+        try {
+          const { data, error } = await supabase
+            .from('organizations')
+            .select('id')
+            .eq('name', orgName)
+            .single();
+            
+          if (!error && data) {
+            orgId = data.id;
+            setOrganizationId(data.id);
+          }
+        } catch (error) {
+          console.error("Error finding organization by name:", error);
         }
       }
-    };
+    }
     
+    if (!orgId) {
+      console.error("Could not determine organization ID");
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      // Direct query to fees table for this organization
+      const { data, error } = await supabase
+        .from('fees')
+        .select('*')
+        .eq('organization_id', orgId);
+      
+      if (error) {
+        console.error("Error fetching fees:", error);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        // Map to component format
+        const mappedLiabilities = data.map(fee => ({
+          id: fee.id.toString(),
+          name: fee.liab_name || 'Unknown Fee',
+          type: fee.liab_type || 'School Fee',
+          amount: fee.amount / 100, // Convert cents to dollars
+          dueDate: fee.deadline ? new Date(fee.deadline).toISOString().split('T')[0] : null,
+          collector: fee.collector_name || '',
+          gcashNumber: fee.account_number || '',
+          academicYear: fee.acad_year || '',
+          period: fee.period_id ? fee.period_id.toString() : '1',
+          qrCode: fee.qr_code || null
+        }));
+        
+        setLiabilities(mappedLiabilities);
+      } else {
+        setLiabilities([]);
+      }
+    } catch (error) {
+      console.error("Error fetching liabilities:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Call fetchLiabilities whenever location or organizationId changes
+  useEffect(() => {
     fetchLiabilities();
-  }, [location.state?.organizationId]);
+  }, [organizationId]);
+  
+  // When the location changes, update our state
+  useEffect(() => {
+    if (location.state?.organization && location.state.organization !== organization) {
+      setOrganization(location.state.organization);
+    }
+    
+    if (location.state?.organizationId && location.state.organizationId !== organizationId) {
+      setOrganizationId(location.state.organizationId);
+    }
+  }, [location]);
   
   const rowsPerPage = 5;
   const totalPages = Math.ceil(liabilities.length / rowsPerPage);
@@ -87,6 +136,7 @@ const ManageDeptLiabs = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'No due date';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
@@ -95,11 +145,11 @@ const ManageDeptLiabs = () => {
     navigate(-1);
   };
   
+  // Handle editing liability
   const handleEditLiability = async (liability, e) => {
     if (e) e.preventDefault();
     if (e) e.stopPropagation();
     
-    // If the liability data contains only basic info, fetch complete data
     try {
       // Fetch the complete fee record if not already available
       const completeData = await getFeeById(parseInt(liability.id));
@@ -132,29 +182,26 @@ const ManageDeptLiabs = () => {
     }
   };
   
+  // Handle updating liability
   const handleUpdateLiability = async (updatedLiabilityData) => {
     try {
-      console.log("Raw updated data:", updatedLiabilityData); // Debug log
-      
       // Convert the form data to match the expected format in your database
       const feeUpdates = {
         name: updatedLiabilityData.name,
         type: updatedLiabilityData.type,
         academicYear: updatedLiabilityData.academicYear,
-        amount: Math.round(parseFloat(updatedLiabilityData.amount)), // Convert to cents for database
+        amount: Math.round(parseFloat(updatedLiabilityData.amount) * 100), // Convert to cents for database
         deadline: updatedLiabilityData.dueDate, 
         collectorName: updatedLiabilityData.collector,
         accountNumber: updatedLiabilityData.gcashNumber,
         periodId: parseInt(updatedLiabilityData.period) // Make sure period is an integer
       };
   
-      console.log("Formatted updates being sent to database:", feeUpdates);
-  
       // If there's a new QR code file
       const qrCodeFile = updatedLiabilityData.qrCode instanceof File ? 
                          updatedLiabilityData.qrCode : null;
   
-      // Call the update function with stringified ID to ensure it's parsed correctly
+      // Call the update function with properly parsed ID
       const success = await updateFee(
         parseInt(updatedLiabilityData.id), 
         feeUpdates, 
@@ -162,45 +209,8 @@ const ManageDeptLiabs = () => {
       );
   
       if (success) {
-        console.log("Database update successful");
-        
-        // Refresh the data from the server instead of just updating local state
-        // This ensures the UI displays what's actually in the database
-        const refreshedFees = await getFeesByOrganization(parseInt(formData.organizationId));
-        if (refreshedFees) {
-          const mappedLiabilities = refreshedFees.map(fee => ({
-            id: fee.id.toString(),
-            name: fee.name,
-            type: fee.type,
-            academicYear: fee.academicYear,
-            period: fee.periodId.toString(),
-            amount: fee.amount / 100, // Convert cents to display amount
-            dueDate: fee.deadline ? fee.deadline.toISOString().split('T')[0] : null,
-            collector: fee.collectorName,
-            gcashNumber: fee.accountNumber,
-            qrCode: fee.qrCode
-          }));
-          
-          setLiabilities(mappedLiabilities);
-        } else {
-          // Fallback to updating local state if refresh fails
-          setLiabilities(prevLiabilities => 
-            prevLiabilities.map(item => 
-              item.id === updatedLiabilityData.id ? {
-                ...item,
-                name: updatedLiabilityData.name,
-                type: updatedLiabilityData.type,
-                academicYear: updatedLiabilityData.academicYear,
-                period: updatedLiabilityData.period,
-                amount: updatedLiabilityData.amount,
-                dueDate: updatedLiabilityData.dueDate,
-                collector: updatedLiabilityData.collector,
-                gcashNumber: updatedLiabilityData.gcashNumber,
-                qrCode: updatedLiabilityData.qrCode
-              } : item
-            )
-          );
-        }
+        // Refresh data from the server
+        fetchLiabilities();
         
         // Close the popup
         setShowEditPopup(false);
@@ -215,6 +225,7 @@ const ManageDeptLiabs = () => {
     }
   };
   
+  // For adding new liability
   const openAddLiabilityPopup = () => {
     setShowAddPopup(true);
   };
@@ -229,13 +240,16 @@ const ManageDeptLiabs = () => {
   };
   
   const handleAddLiability = (newLiability) => {
-    setLiabilities(prev => [...prev, newLiability]);
+    // After adding, refresh the data from the database
+    fetchLiabilities();
     
+    // Update pagination if needed
     if ((liabilities.length + 1) > currentPage * rowsPerPage) {
       setCurrentPage(Math.ceil((liabilities.length + 1) / rowsPerPage));
     }
   };
   
+  // For deleting liability
   const handleDeleteLiability = (liability, e) => {
     if (e) e.stopPropagation();
     setDeleteModal({ show: true, liability });
@@ -247,10 +261,8 @@ const ManageDeptLiabs = () => {
       const success = await deleteFee(parseInt(deleteModal.liability.id));
       
       if (success) {
-        console.log("Successfully deleted liability from the database");
-        
-        // Update UI state
-        setLiabilities(liabilities.filter(item => item.id !== deleteModal.liability.id));
+        // Refresh data from the server
+        fetchLiabilities();
         
         // Reset delete modal
         setDeleteModal({ show: false, liability: null });
@@ -263,11 +275,9 @@ const ManageDeptLiabs = () => {
         }
       } else {
         console.error("Failed to delete liability from the database");
-        // Show error message
       }
     } catch (error) {
       console.error("Error deleting liability:", error);
-      // Show error message
     }
   };
 
@@ -275,11 +285,13 @@ const ManageDeptLiabs = () => {
     setDeleteModal({ show: false, liability: null });
   };
 
+  // Update location state with liabilities data
   useEffect(() => {
-    const currentState = { ...location.state, organization, liabilities };
+    const currentState = { ...location.state, organization, liabilities, organizationId };
     navigate(location.pathname, { state: currentState, replace: true });
-  }, [liabilities, organization]);
+  }, [liabilities, organization, organizationId]);
   
+  // Render component
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       {/* Header with back button */}
@@ -322,9 +334,13 @@ const ManageDeptLiabs = () => {
       </div>
       
       {/* Table Content */}
-      {liabilities.length === 0 ? (
-        <div className="w-full flex justify-center items-center h-32 text-gray-500 text-sm bg-gray-50 rounded-b-lg">
-          No liabilities found for this organization.
+      {isLoading ? (
+        <div className="w-full flex justify-center items-center h-32 py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#a63f42]"></div>
+        </div>
+      ) : liabilities.length === 0 ? (
+        <div className="w-full flex flex-col justify-center items-center h-32 text-gray-500 text-sm bg-gray-50 rounded-b-lg">
+          <p>No liabilities found for this organization.</p>
         </div>
       ) : (
         <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">

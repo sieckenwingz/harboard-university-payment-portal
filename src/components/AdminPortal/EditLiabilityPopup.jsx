@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Upload, CheckCircle, AlertCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiability }) => {
-  const navigate = useNavigate();
+  // Create references for DOM elements to safely handle them
+  const popupRef = useRef(null);
+  const fileInputRef = useRef(null);
   
+  // Initialize form data safely
   const [formData, setFormData] = useState({
     id: liability?.id || "",
-    type: liability?.type || "",
-    name: liability?.name || "",
     liabilityType: liability?.type || "",
     liabilityName: liability?.name || "",
-    academicYear: liability?.academicYear || "", // New field
-    period: liability?.period || "", // New field
+    academicYear: liability?.academicYear || "",
+    period: liability?.period || "",
     amount: liability?.amount || "",
     dueDate: liability?.dueDate || "",
     collector: liability?.collector || "",
@@ -36,22 +36,82 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
   // QR code preview
   const [qrPreview, setQrPreview] = useState(liability?.qrCode || null);
   
-  // modal states
+  // Modal states
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   
-  // animation states
+  // Animation states
   const [formVisible, setFormVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
 
+  // Click outside handler for modal
   useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        // Close only if clicking on the backdrop, not on child elements
+        if (event.target.classList.contains('modal-backdrop')) {
+          handleCloseWithAnimation();
+        }
+      }
+    };
+
+    // Add event listener only when the component is mounted
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Animation setup
     setTimeout(() => {
       setFormVisible(true);
     }, 50);
+    
+    return () => {
+      // Clean up the event listener when the component unmounts
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
   
+  // Reset form data whenever liability changes
+  useEffect(() => {
+    if (liability) {
+      try {
+        setFormData({
+          id: liability.id || "",
+          liabilityType: liability.type || "",
+          liabilityName: liability.name || "",
+          academicYear: liability.academicYear || "",
+          period: liability.period || "",
+          amount: liability.amount || "",
+          dueDate: liability.dueDate ? String(liability.dueDate).split('T')[0] : "",
+          collector: liability.collector || "",
+          gcashNumber: liability.gcashNumber || "",
+          qrCode: null
+        });
+        
+        // Set QR preview if available
+        if (liability.qrCode) {
+          setQrPreview(liability.qrCode);
+        }
+      } catch (error) {
+        console.error("Error setting form data:", error);
+        // Provide fallback values
+        setFormData({
+          id: liability?.id || "",
+          liabilityType: "School Fee",
+          liabilityName: "",
+          academicYear: "2024-2025",
+          period: "1",
+          amount: "0",
+          dueDate: "",
+          collector: "",
+          gcashNumber: "",
+          qrCode: null
+        });
+      }
+    }
+  }, [liability]);
+  
+  // Handle Success Modal Timeouts
   useEffect(() => {
     let timer;
     if (showSuccessModal) {
@@ -63,6 +123,7 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
     return () => clearTimeout(timer);
   }, [showSuccessModal]);
   
+  // Handle Error Modal Timeouts
   useEffect(() => {
     let timer;
     if (showErrorModal) {
@@ -75,56 +136,78 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
   }, [showErrorModal]);
   
   const handleCloseWithAnimation = () => {
-    setFormVisible(false);
-    setTimeout(() => {
-      onClose();
-    }, 300);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name === "liabilityType") {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-        type: value
-      }));
-    } else if (name === "liabilityName") {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-        name: value
-      }));
-    } else if (name === "gcashNumber") {
-      const filteredValue = value.replace(/\D/g, '');
-      const truncatedValue = filteredValue.slice(0, 11);
-      
-      setFormData(prev => ({
-        ...prev,
-        [name]: truncatedValue
-      }));
+    if (formVisible) {
+      setFormVisible(false);
+      setTimeout(() => {
+        if (typeof onClose === 'function') {
+          onClose();
+        }
+      }, 300);
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      if (typeof onClose === 'function') {
+        onClose();
+      }
     }
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        qrCode: file
-      }));
+  const handleInputChange = (e) => {
+    try {
+      const { name, value } = e.target;
       
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setQrPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      if (name === "gcashNumber") {
+        const filteredValue = value.replace(/\D/g, '');
+        const truncatedValue = filteredValue.slice(0, 11);
+        
+        setFormData(prev => ({
+          ...prev,
+          [name]: truncatedValue
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
+      
+      // For special fields that need to update two properties
+      if (name === "liabilityType") {
+        setFormData(prev => ({
+          ...prev,
+          type: value
+        }));
+      } else if (name === "liabilityName") {
+        setFormData(prev => ({
+          ...prev,
+          name: value
+        }));
+      }
+    } catch (error) {
+      console.error("Error handling input change:", error);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    try {
+      const file = e.target.files?.[0];
+      if (file) {
+        setFormData(prev => ({
+          ...prev,
+          qrCode: file
+        }));
+        
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setQrPreview(reader.result);
+        };
+        reader.onerror = () => {
+          console.error("Error reading file");
+          setErrorMessage("Failed to read the uploaded file");
+          setShowErrorModal(true);
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      console.error("Error handling file change:", error);
     }
   };
 
@@ -135,23 +218,30 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
       'amount', 'dueDate', 'collector', 'gcashNumber'
     ];
     
-    const missingFields = requiredFields.filter(field => 
-      !formData[field] || formData[field].toString().trim() === ''
-    );
-    
-    if (missingFields.length > 0) {
-      setErrorMessage("Please fill in all required fields");
+    try {
+      const missingFields = requiredFields.filter(field => 
+        !formData[field] || String(formData[field]).trim() === ''
+      );
+      
+      if (missingFields.length > 0) {
+        setErrorMessage("Please fill in all required fields");
+        setShowErrorModal(true);
+        return false;
+      }
+      
+      if (formData.gcashNumber && formData.gcashNumber.length !== 11) {
+        setErrorMessage("GCash number must be 11 digits");
+        setShowErrorModal(true);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error validating form:", error);
+      setErrorMessage("An error occurred while validating the form");
       setShowErrorModal(true);
       return false;
     }
-    
-    if (formData.gcashNumber.length !== 11) {
-      setErrorMessage("GCash number must be 11 digits");
-      setShowErrorModal(true);
-      return false;
-    }
-    
-    return true;
   };
 
   const handleSubmit = (e) => {
@@ -161,22 +251,36 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
       return;
     }
     
-    const updatedLiability = {
-      id: formData.id,
-      type: formData.liabilityType, 
-      name: formData.liabilityName,
-      academicYear: formData.academicYear, // Include new field
-      period: formData.period, // Include new field
-      amount: parseFloat(formData.amount),
-      dueDate: formData.dueDate,
-      collector: formData.collector,
-      gcashNumber: formData.gcashNumber,
-      qrCode: qrPreview
-    };
-    
-    onUpdateLiability(updatedLiability);
-    
-    setShowSuccessModal(true);
+    try {
+      // Prepare the liability data in the format expected by the update function
+      const updatedLiability = {
+        id: formData.id,
+        type: formData.liabilityType, 
+        name: formData.liabilityName,
+        academicYear: formData.academicYear,
+        period: formData.period,
+        amount: parseFloat(formData.amount),
+        dueDate: formData.dueDate,
+        collector: formData.collector,
+        gcashNumber: formData.gcashNumber,
+        qrCode: formData.qrCode // This will be the File object if a new QR was uploaded
+      };
+      
+      // Call the parent component's update function
+      if (typeof onUpdateLiability === 'function') {
+        onUpdateLiability(updatedLiability);
+        // Show success modal - this will be shown if the update is successful
+        setShowSuccessModal(true);
+      } else {
+        console.error("onUpdateLiability is not a function");
+        setErrorMessage("Update function not available");
+        setShowErrorModal(true);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setErrorMessage("An error occurred while submitting the form");
+      setShowErrorModal(true);
+    }
   };
   
   const handleSuccessModalClose = () => {
@@ -209,10 +313,19 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
     return [];
   };
 
+  const handleFileUploadClick = () => {
+    // Safely access the file input reference
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out"
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out modal-backdrop"
          style={{ opacity: formVisible ? 1 : 0 }}>
-      <div className={`bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh] transition-all duration-300 ease-in-out ${formVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+      <div 
+        ref={popupRef}
+        className={`bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh] transition-all duration-300 ease-in-out ${formVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
         {/* Header */}
         <div className="bg-gray-50 px-4 py-3 flex justify-between items-center border-b shrink-0">
           <h2 className="text-lg font-bold text-gray-800">Edit Liability</h2>
@@ -235,7 +348,7 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
               </label>
               <input
                 type="text"
-                value={organization}
+                value={organization || ''}
                 readOnly
                 className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 text-sm"
               />
@@ -284,7 +397,7 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
               </div>
             </div>
 
-            {/* NEW SECTION: Academic Year and Period */}
+            {/* Academic Year and Period */}
             <div className="flex gap-3">
               <div className="w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -398,7 +511,7 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
                   className="w-full p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent"
                 />
                 <span className="text-xs text-gray-500 mt-1 block">
-                  {formData.gcashNumber.length}/11 digits
+                  {formData.gcashNumber ? formData.gcashNumber.length : 0}/11 digits
                 </span>
               </div>
             </div>
@@ -409,11 +522,15 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
                 GCash QR Code
               </label>
               <div className="flex items-start gap-3">
-                <label className="flex items-center justify-center w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 shrink-0">
+                <div 
+                  onClick={handleFileUploadClick}
+                  className="flex items-center justify-center w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 shrink-0"
+                >
                   <input
                     type="file"
+                    ref={fileInputRef}
                     accept="image/*"
-                    onChange={handleFileUpload}
+                    onChange={handleFileChange}
                     className="hidden"
                   />
                   {qrPreview ? (
@@ -430,7 +547,7 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
                       </span>
                     </div>
                   )}
-                </label>
+                </div>
                 <div className="text-xs text-gray-500 pt-1">
                   Upload the GCash QR code for easy payments
                 </div>

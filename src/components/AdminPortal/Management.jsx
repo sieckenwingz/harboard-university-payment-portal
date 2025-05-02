@@ -1,7 +1,3 @@
-// src/components/AdminPortal/Management.jsx
-// 2nd nav sa management
-// "dept name" - liabilities
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Eye } from "lucide-react";
@@ -242,7 +238,6 @@ const Management = () => {
     );
   }
 
-  // The UI remains the same
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div>
@@ -519,6 +514,6 @@ const Management = () => {
       )}
     </div>
   );
-};
+}
 
 export default Management;
