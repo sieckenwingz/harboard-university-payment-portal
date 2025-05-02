@@ -1,25 +1,31 @@
+// components/auth/StudentLogin.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./../../App";
+import { Eye, EyeOff } from "react-feather"; // Import eye icons from react-feather
 
 const StudentLogin = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [invalidCredentials, setInvalidCredentials] = useState(false);
   const navigate = useNavigate();
   
   const handleLogin = async (event) => {
     event.preventDefault(); // Triggered both by Enter key and button submit
     setLoading(true);
+    setInvalidCredentials(false); // Reset invalid state
 
     // Attempt authentication via Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
     });
+    
     if (error) {
-      alert(error.error_description || error.message);
+      setInvalidCredentials(true);
       setLoading(false);
       return;
     }
@@ -33,17 +39,25 @@ const StudentLogin = () => {
         .maybeSingle();
 
       if (studentError || !studentData) {
-        alert("Access Denied: You are not authorized as a student.");
+        setInvalidCredentials(true);
         await supabase.auth.signOut();
         setLoading(false);
         return;
       }
       navigate("/dashboard");
     } else {
-      alert("Login unsuccessful");
+      setInvalidCredentials(true);
     }
     setLoading(false);
   };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const inputBorderClass = invalidCredentials 
+    ? "border-red-300 bg-red-50" 
+    : "border-gray-300 bg-[#f7f6ff]";
 
   return (
     <div className="w-screen h-screen flex items-center bg-white font-['Roboto']">
@@ -55,27 +69,39 @@ const StudentLogin = () => {
 
       <div className="relative w-full h-full flex justify-end items-center px-4 sm:px-8">
         <div className="absolute right-[100px] top-[180px] w-[450px] h-[500px] bg-neutral-50 rounded-[10px] shadow-md border border-[#64cafb] backdrop-blur-md flex flex-col items-center p-8">
-          <div className="w-full text-left">
+          <div className="w-full text-left mb-2">
             <h1 className="text-black text-[32px] font-semibold">
               Student Login
             </h1>
-            <p className="text-gray-600 text-[18px] font-light">
-              Welcome to Student Payment Portal
-            </p>
+            {/* Welcome text removed as requested */}
           </div>
 
+          {/* Subtle error message */}
+          {invalidCredentials && (
+            <p className="w-full text-red-600 text-sm mb-4">
+              Invalid credentials. Please check your email and password.
+            </p>
+          )}
+
+          {/* Adding a spacer div when there's no error to prevent layout shift */}
+          {!invalidCredentials && <div className="h-6"></div>}
+
           {/* Wrap the inputs and button in a form so Enter submits */}
-          <form onSubmit={handleLogin} className="w-full mt-6">
+          <form onSubmit={handleLogin} className="w-full mt-4">
             <div className="w-full">
               <label className="text-[#1f1f1f] text-lg sm:text-xl font-normal">
                 Email
               </label>
               <input
                 type="text"
-                className="w-full mt-2 p-3 bg-[#f7f6ff] rounded-lg shadow-inner text-lg"
+                className={`w-full mt-2 p-3 rounded-lg shadow-inner text-lg border ${inputBorderClass}`}
                 placeholder="Enter your email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (invalidCredentials) setInvalidCredentials(false);
+                }}
+                required
               />
             </div>
 
@@ -83,16 +109,33 @@ const StudentLogin = () => {
               <label className="text-[#1f1f1f] text-lg sm:text-xl font-normal">
                 Password
               </label>
-              <input
-                type="password"
-                className="w-full mt-2 p-3 bg-[#f7f6ff] rounded-lg shadow-inner text-lg"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className={`w-full mt-2 p-3 rounded-lg shadow-inner text-lg border ${inputBorderClass}`}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (invalidCredentials) setInvalidCredentials(false);
+                  }}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
+                </button>
+              </div>
             </div>
 
-            <div className="w-full mt-4 flex flex-col sm:flex-row justify-between items-center text-base">
+            <div className="w-full mt-4 flex items-center text-base">
               <label className="flex items-center text-gray-700">
                 <input
                   type="checkbox"
@@ -102,9 +145,6 @@ const StudentLogin = () => {
                 />
                 Remember me
               </label>
-              <a href="#" className="text-gray-600 hover:underline">
-                Forgot Password?
-              </a>
             </div>
 
             <button
