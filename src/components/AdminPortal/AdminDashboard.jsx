@@ -241,7 +241,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="w-full flex justify-between py-4 mt-6 border-b bg-gray-50 px-4 rounded-t-lg">
-        <span style={{ width: "40%" }} className="text-gray-700 font-semibold">ORGANIZATION</span>
+        <span style={{ width: "60%" }} className="text-gray-700 font-semibold">ORGANIZATION</span>
         <span style={{ width: "40%" }} className="text-gray-700 font-semibold">STATUS</span>
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">ACTIONS</span>
       </div>
@@ -264,7 +264,7 @@ const AdminDashboard = () => {
                 className="w-full flex justify-between py-4 px-4 border-b hover:bg-gray-50 cursor-pointer"
                 onClick={() => navigateToOrganizationLiabilities(item)}
               >
-                <span style={{ width: "40%" }} className="text-gray-700 font-medium">{item.name}</span>
+                <span style={{ width: "60%" }} className="text-gray-700 font-medium">{item.name}</span>
                 <span style={{ width: "40%" }} className="flex items-center">
                   <span 
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm ${priorityStyle.bgColor} border ${priorityStyle.borderColor}`} 

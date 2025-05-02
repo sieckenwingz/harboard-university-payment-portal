@@ -1,6 +1,3 @@
-//4th nav sa management
-// edit icon button
-
 import React, { useState, useEffect } from "react";
 import { X, Upload, CheckCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +11,8 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
     name: liability?.name || "",
     liabilityType: liability?.type || "",
     liabilityName: liability?.name || "",
+    academicYear: liability?.academicYear || "", // New field
+    period: liability?.period || "", // New field
     amount: liability?.amount || "",
     dueDate: liability?.dueDate || "",
     collector: liability?.collector || "",
@@ -21,6 +20,18 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
     qrCode: null,
   });
 
+  // Define academic years and periods
+  const academicYears = [
+    "2023-2024",
+    "2024-2025",
+    "2025-2026",
+  ];
+  
+  const periodOptions = [
+    { value: "1", label: "1st Semester" },
+    { value: "2", label: "2nd Semester" },
+    { value: "SUMMER", label: "Summer" }
+  ];
   
   // QR code preview
   const [qrPreview, setQrPreview] = useState(liability?.qrCode || null);
@@ -86,7 +97,6 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
         name: value
       }));
     } else if (name === "gcashNumber") {
-
       const filteredValue = value.replace(/\D/g, '');
       const truncatedValue = filteredValue.slice(0, 11);
       
@@ -119,7 +129,12 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
   };
 
   const validateForm = () => {
-    const requiredFields = ['liabilityType', 'liabilityName', 'amount', 'dueDate', 'collector', 'gcashNumber'];
+    // Updated required fields list with the new fields
+    const requiredFields = [
+      'liabilityType', 'liabilityName', 'academicYear', 'period',
+      'amount', 'dueDate', 'collector', 'gcashNumber'
+    ];
+    
     const missingFields = requiredFields.filter(field => 
       !formData[field] || formData[field].toString().trim() === ''
     );
@@ -149,7 +164,9 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
     const updatedLiability = {
       id: formData.id,
       type: formData.liabilityType, 
-      name: formData.liabilityName, 
+      name: formData.liabilityName,
+      academicYear: formData.academicYear, // Include new field
+      period: formData.period, // Include new field
       amount: parseFloat(formData.amount),
       dueDate: formData.dueDate,
       collector: formData.collector,
@@ -261,6 +278,47 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
                   {getLiabilityNameOptions().map((name) => (
                     <option key={name} value={name}>
                       {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* NEW SECTION: Academic Year and Period */}
+            <div className="flex gap-3">
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Academic Year *
+                </label>
+                <select
+                  name="academicYear"
+                  value={formData.academicYear}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent"
+                >
+                  <option value="">Select year</option>
+                  {academicYears.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Period *
+                </label>
+                <select
+                  name="period"
+                  value={formData.period}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent"
+                >
+                  <option value="">Select period</option>
+                  {periodOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
                     </option>
                   ))}
                 </select>

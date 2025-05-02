@@ -1,92 +1,40 @@
-// 1st nav sa managemnent
-// liabilities management
+// src/components/AdminPortal/Management.jsx
+// 2nd nav sa management
+// "dept name" - liabilities
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Eye } from "lucide-react";
 import ManageReceiptView from "./ManageReceiptView";
+import { useLiabilities } from "./hooks/useLiabilities";
 
 const Management = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("liabilities");
   const [organizationFilter, setOrganizationFilter] = useState("All Organizations");
   const [liabilityFilter, setLiabilityFilter] = useState("All Liabilities");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   
-  const academicOrganizations = [
-    "SSC",
-    "COE",
-    "CURSOR",
-  ];
+  // Use our custom hook to fetch organizations and liabilities
+  const { 
+    organizations: organizationLiabilities, 
+    isLoading, 
+    error,
+    refreshOrganizations
+  } = useLiabilities();
   
-  // sample liabilities data per organization
-  const generateOrganizationLiabilities = () => {
-    const liabilityTypes = [
-      "School Fee", 
-      "Membership Fee"
-    ];
-    
-    const liabilityNames = {
-      "School Fee": [
-        "Tuition Fee",
-        "Laboratory Fee",
-        "Library Fee",
-        "Technology Fee",
-        "Athletic Fee"
-      ],
-      "Membership Fee": [
-        "Student Council",
-        "Engineering Society",
-        "Business Club",
-        "Arts Club",
-        "Medical Society"
-      ]
-    };
-    
-    const result = [];
-    
-    // liabss for each organization
-    academicOrganizations.forEach((org) => {
-      const liabilityCount = Math.floor(Math.random() * 5) + 1;
-      const organizationLiabilities = [];
-      
-      for (let j = 0; j < liabilityCount; j++) {
-        const typeKey = liabilityTypes[Math.floor(Math.random() * liabilityTypes.length)];
-        const nameOptions = liabilityNames[typeKey];
-        const nameIndex = Math.floor(Math.random() * nameOptions.length);
-        const amount = Math.floor(Math.random() * 5000) + 1000;
-        const today = new Date();
-        const dueDate = new Date(today);
-        dueDate.setDate(today.getDate() + Math.floor(Math.random() * 60) + 30);
-        
-        organizationLiabilities.push({
-          id: `${org}-${j}`,
-          name: nameOptions[nameIndex],
-          type: typeKey,
-          amount: amount,
-          dueDate: dueDate.toISOString().split('T')[0],
-          collector: `Faculty Member ${j + 1}`,
-          gcashNumber: `09${Math.floor(Math.random() * 100000000) + 100000000}`,
-          qrCode: null
-        });
-      }
-      
-      result.push({
-        organization: org,
-        liabilities: organizationLiabilities,
-        count: organizationLiabilities.length
-      });
-    });
-    
-    return result;
-  };
-
-  //dummy data uli
-  // sample student payments data
+  // State for student payments (still using dummy data for now)
+  const [studentPayments, setStudentPayments] = useState([]);
+  
+  // Generate student payments data
+  useEffect(() => {
+    setStudentPayments(generateStudentPayments());
+  }, [organizationLiabilities]); // Regenerate when organizations change
+  
+  // Your existing student payments generation function
   const generateStudentPayments = () => {
     const liabilityTypes = [
       "School Fee", 
@@ -121,9 +69,9 @@ const Management = () => {
     
     const result = [];
     
-    // dummy data for student payments
+    // Generate dummy data for student payments
     for (let i = 0; i < 25; i++) {
-      const orgIndex = Math.floor(Math.random() * academicOrganizations.length);
+      const orgIndex = Math.floor(Math.random() * (organizationLiabilities.length || 3));
       const typeKey = liabilityTypes[Math.floor(Math.random() * liabilityTypes.length)];
       const nameOptions = liabilityNames[typeKey];
       const nameIndex = Math.floor(Math.random() * nameOptions.length);
@@ -141,7 +89,7 @@ const Management = () => {
         id: i + 1,
         studentId: `2025-${Math.floor(Math.random() * 10000) + 1000}`,
         studentName: `Student ${i + 1}`,
-        organization: academicOrganizations[orgIndex],
+        organization: organizationLiabilities[orgIndex]?.organization || "Unknown Org",
         liabilityName: nameOptions[nameIndex],
         liabilityType: typeKey,
         amount: amount,
@@ -160,21 +108,10 @@ const Management = () => {
     
     return result;
   };
-  
-  const [organizationLiabilities, setOrganizationLiabilities] = useState([]);
-  const [studentPayments, setStudentPayments] = useState([]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setOrganizationLiabilities(generateOrganizationLiabilities());
-      setStudentPayments(generateStudentPayments());
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
 
   const rowsPerPage = 5;
 
+  // Keep all the existing handlers
   const handleOrganizationFilterChange = (e) => {
     setOrganizationFilter(e.target.value);
   };
@@ -188,16 +125,16 @@ const Management = () => {
   };
 
   const navigateToManageDeptLiabs = (organization) => {
+    // Find the organization data to pass to the next screen
+    const orgData = organizationLiabilities.find(d => d.organization === organization);
+    
     navigate(`/${organization.replace(/\s+/g, '-').toLowerCase()}-liabilities`, { 
       state: { 
         organization: organization,
-        liabilities: organizationLiabilities.find(d => d.organization === organization)?.liabilities || []
+        organizationId: orgData?.id,
+        liabilities: orgData?.liabilities || []
       } 
     });
-  };
-
-  const navigateToNewLiability = () => {
-    navigate("/add-new-liability");
   };
 
   const handleViewReceipt = (payment) => {
@@ -208,13 +145,16 @@ const Management = () => {
     setSelectedReceipt(null);
   };
 
+  // Filter organizations based on search
   const filteredOrganizations = organizationLiabilities.filter((item) => {
-    if (searchTerm && !item.organization.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && 
+        !item.organization.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     return true;
   });
 
+  // Keep existing student payments filtering logic
   const filteredStudentPayments = studentPayments.filter((item) => {
     if (organizationFilter !== "All Organizations" && item.organization !== organizationFilter) {
       return false;
@@ -261,7 +201,7 @@ const Management = () => {
   };
 
   const getOrganizationOptions = () => {
-    return ["All Organizations", ...academicOrganizations];
+    return ["All Organizations", ...organizationLiabilities.map(org => org.organization)];
   };
 
   const getLiabilityOptions = () => {
@@ -285,6 +225,24 @@ const Management = () => {
     return ["All Status", "Accepted", "Rejected"];
   };
 
+  // Render error message if there was an error fetching data
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="text-center py-8">
+          <div className="text-red-500 mb-4">Error loading organizations: {error}</div>
+          <button 
+            onClick={refreshOrganizations}
+            className="px-4 py-2 bg-[#a63f42] text-white rounded-md hover:bg-[#8a3538]"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // The UI remains the same
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div>
@@ -356,8 +314,8 @@ const Management = () => {
                   <span style={{ width: "70%" }} className="text-gray-700 font-medium">
                     {organization.organization}
                   </span>
-                  <span style={{ width: "30%" }} className="text-maroon">
-                    {organization.count} liabilities assigned
+                  <span style={{ width: "30%" }} className="text-red-700">
+                    {organization.count} {organization.count === 1 ? 'liability' : 'liabilities'} assigned
                   </span>
                 </div>
               ))}
