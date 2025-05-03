@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter } from "lucide-react";
+import { useOrganizationFeesWithPendingCount } from "./hooks/useOrganizationFeesWithPendingCount";
 
 const OrganizationLiabilities = () => {
   const { organizationId } = useParams();
@@ -14,124 +15,14 @@ const OrganizationLiabilities = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [liabilities, setLiabilities] = useState([]);
-  
-  // liab categories
-  const schoolFees = [
-    "Tuition Fee",
-    "Miscellaneous Fee",
-    "Laboratory Fee",
-    "Library Fee",
-    "Enrollment Fee",
-    "Computer Lab Fee",
-    "Student ID Fee",
-    "Student Development Fee",
-    "Building/Facility Fee",
-    "Course Materials Fee"
-  ];
-  
-  const membershipFees = [
-    "Student Council Fee",
-    "College of Engineering Fee", 
-    "Sports Team Fee",
-    "Club Membership Fee",
-    "Peer Support Group Fee",
-    "Student Government Fee",
-    "Student Publication Fee",
-    "Environmental Club Fee",
-    "Social Club Fee",
-    "National Honor Society Fee"
-  ];
 
-  const categories = {
-    "School Fees": schoolFees,
-    "Membership Fees": membershipFees
-  };
+  const { fees, loading, error } = useOrganizationFeesWithPendingCount(organizationId);
 
   useEffect(() => {
     if (!organization) {
       navigate("/");
       return;
     }
-    
-    // generated sample liab
-    const generateLiabilities = () => {
-      const result = [];
-      let id = 1;
-      
-      // generated sch fee
-      schoolFees.forEach(fee => {
-        const amount = Math.floor(Math.random() * 3000) + 500;
-        const pendingStudents = Math.floor(Math.random() * 30) + 1;
-        
-        result.push({
-          id: id++,
-          name: fee,
-          category: "School Fees",
-          status: {
-            pending: pendingStudents,
-            verified: Math.floor(Math.random() * 50) + 20
-          },
-          amount: amount,
-          lastUpdate: `2025-0${Math.floor(Math.random() * 4) + 1}-${Math.floor(Math.random() * 28) + 1}`,
-          students: generateStudentPayments(pendingStudents, amount)
-        });
-      });
-      
-      // generated membership fe
-      membershipFees.forEach(fee => {
-        if (fee.includes(organization.name) || Math.random() > 0.7) { 
-          const amount = Math.floor(Math.random() * 1000) + 100;
-          const pendingStudents = Math.floor(Math.random() * 20) + 1;
-          
-          result.push({
-            id: id++,
-            name: fee,
-            category: "Membership Fees",
-            status: {
-              pending: pendingStudents,
-              verified: Math.floor(Math.random() * 40) + 10
-            },
-            amount: amount,
-            lastUpdate: `2025-0${Math.floor(Math.random() * 4) + 1}-${Math.floor(Math.random() * 28) + 1}`,
-            students: generateStudentPayments(pendingStudents, amount)
-          });
-        }
-      });
-      
-      return result;
-    };
-
-    // generated sample student payments per liability
-    const generateStudentPayments = (count, baseAmount) => {
-      const students = [];
-      const firstNames = ["John", "Maria", "Carlos", "Sarah", "Michael", "Emma", "Juan", "Sophia", "David", "Olivia"];
-      const lastNames = ["Smith", "Garcia", "Lee", "Patel", "Johnson", "Rodriguez", "Williams", "Brown", "Davis", "Martinez"];
-      
-      for (let i = 0; i < count; i++) {
-        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-        
-        students.push({
-          id: `STU-${Math.floor(1000 + Math.random() * 9000)}`,
-          srCode: `SR-${Math.floor(10000 + Math.random() * 90000)}`,
-          name: `${firstName} ${lastName}`,
-          amountPaid: baseAmount + Math.floor(Math.random() * 100),
-          date: `2025-0${Math.floor(Math.random() * 4) + 1}-${Math.floor(Math.random() * 28) + 1}`,
-          referenceNo: `REF-${Math.floor(100000 + Math.random() * 900000)}`,
-          receiptImage: "/api/placeholder/600/800"
-        });
-      }
-      
-      return students;
-    };
-    
-    // loading data simulation
-    setTimeout(() => {
-      setLiabilities(generateLiabilities());
-      setIsLoading(false);
-    }, 800);
   }, [organization, navigate]);
 
   const rowsPerPage = 5;
@@ -153,7 +44,7 @@ const OrganizationLiabilities = () => {
     });
   };
 
-  const filteredLiabilities = liabilities.filter((item) => {
+  const filteredLiabilities = fees.filter((item) => {
     // filter by category
     if (categoryFilter !== "All Categories" && item.category !== categoryFilter) return false;
     
@@ -184,7 +75,7 @@ const OrganizationLiabilities = () => {
   };
 
   const getTotalPendingVerifications = () => {
-    return liabilities.reduce((total, item) => total + item.status.pending, 0);
+    return fees.reduce((total, item) => total + item.pendingFeeCount, 0);
   };
 
   return (
@@ -201,7 +92,7 @@ const OrganizationLiabilities = () => {
             {organization?.name} Liabilities
           </h1>
           <p className="text-gray-600 mt-1">
-            {getTotalPendingVerifications()} pending student payments across {liabilities.length} liabilities
+            {getTotalPendingVerifications()} pending student payments across {fees.length} liabilities
           </p>
         </div>
       </div>
@@ -243,7 +134,7 @@ const OrganizationLiabilities = () => {
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">PAYMENT DUE</span>
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="w-full flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a63f42]"></div>
         </div>
@@ -261,14 +152,14 @@ const OrganizationLiabilities = () => {
                 onClick={() => navigateToStudentPayments(item)}
               >
                 <span style={{ width: "25%" }} className="text-gray-700 font-medium">{item.name}</span>
-                <span style={{ width: "20%" }} className="text-gray-600">{item.category}</span>
+                <span style={{ width: "20%" }} className="text-gray-600">{item.type}</span>
                 <span style={{ width: "15%" }} className="text-gray-600">{formatAmount(item.amount)}</span>
                 <span style={{ width: "20%" }}>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-orange-100 border border-orange-300 text-orange-700">
-                    {item.status.pending} pending students
+                    {item.pendingFeeCount} pending students
                   </span>
                 </span>
-                <span style={{ width: "20%" }} className="text-gray-600">{formatDate(item.lastUpdate)}</span>
+                <span style={{ width: "20%" }} className="text-gray-600">{item.formattedDeadline}</span>
               </div>
             );
           })}

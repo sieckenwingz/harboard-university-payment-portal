@@ -5,7 +5,7 @@ import { Status } from "./Status";
 export class StudentFee {
     id: number;
     createdAt: Date;
-    studentId: string;
+    studentId: any;
     feeId: number | Fee;
     paymentId: number | Payment | null;
     status: Status | undefined;

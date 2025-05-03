@@ -17,13 +17,13 @@ import {
   X,
   RefreshCw
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import PaymentReceiptModal from "./PaymentReceiptModal";
 import TransactionProcessingModal from "./TransactionProcessingModal";
 import ConfirmationModal from "./ConfirmationModal";
+import { useStudentFees } from "./hooks/useStudentFees";
 
 const StudentPayments = () => {
-  const { organizationId, liabilityId } = useParams();
+  const { organizationId, liabilityId: feeId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { organization, liability } = location.state || {};
@@ -31,10 +31,6 @@ const StudentPayments = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [students, setStudents] = useState([]);
-  const [verifiedStudents, setVerifiedStudents] = useState([]);
-  const [rejectedStudents, setRejectedStudents] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [confirmationModal, setConfirmationModal] = useState({ show: false, type: null, studentId: null });
@@ -52,116 +48,14 @@ const StudentPayments = () => {
     showMatched: true,
     showUnmatched: true
   });
+
+  const { studentFees, verifiedStudentFees, rejectedStudentFees, loading, error } = useStudentFees(feeId);
   
   useEffect(() => {
     if (!liability) {
       navigate(`/organizations/${organizationId}`);
       return;
     }
-    
-    setTimeout(() => {
-      // sample data for pending and verified students
-      const pendingStudentsSample = [
-        {
-          id: "s1",
-          name: "John Doe",
-          srCode: "22-04756",
-          amountPaid: 15000,
-          date: "2024-03-01",
-          referenceNo: "0000201599770",
-          receiptImage: "/api/placeholder/200/300",
-          status: "pending"
-        },
-        {
-          id: "s2",
-          name: "Jane Smith",
-          srCode: "22-02812",
-          amountPaid: 5000,
-          date: "2024-03-05",
-          referenceNo: "0000508781961",
-          receiptImage: "/api/placeholder/200/300",
-          status: "pending"
-        },
-        {
-          id: "s3",
-          name: "Mike Johnson",
-          srCode: "22-03105",
-          amountPaid: 15000,
-          date: "2024-03-07",
-          referenceNo: "0000211147677",
-          receiptImage: "/api/placeholder/200/300",
-          status: "pending"
-        },
-        {
-          id: "s4",
-          name: "Sarah Williams",
-          srCode: "22-09876",
-          amountPaid: 5000,
-          date: "2024-03-15",
-          referenceNo: "0000225086095",
-          receiptImage: "/api/placeholder/200/300",
-          status: "pending"
-        },
-        {
-          id: "s5",
-          name: "Robert Brown",
-          srCode: "22-01234",
-          amountPaid: 15000,
-          date: "2024-03-17",
-          referenceNo: "0000026980425",
-          receiptImage: "/api/placeholder/200/300",
-          status: "pending"
-        }
-      ];
-      
-      const verifiedStudentsSample = [
-        {
-          id: "s6",
-          name: "Emily Jones",
-          srCode: "22-00756",
-          amountPaid: 15000,
-          date: "2024-02-28",
-          referenceNo: "0000292500708",
-          receiptImage: "/api/placeholder/200/300",
-          status: "verified",
-          verifiedDate: "2024-03-01",
-          verifiedBy: "Admin User"
-        },
-        {
-          id: "s7",
-          name: "David Garcia",
-          srCode: "22-09172",
-          amountPaid: 5000,
-          date: "2024-03-01",
-          referenceNo: "0000292634162",
-          receiptImage: "/api/placeholder/200/300",
-          status: "verified",
-          verifiedDate: "2024-03-02",
-          verifiedBy: "Admin User"
-        }
-      ];
-      
-      const rejectedStudentsSample = [
-        {
-          id: "s8",
-          name: "Alex Rodriguez",
-          srCode: "22-06543",
-          amountPaid: 15000,
-          date: "2024-02-15",
-          referenceNo: "0000123456789",
-          receiptImage: "/api/placeholder/200/300",
-          status: "rejected",
-          rejectedDate: "2024-02-17",
-          rejectedBy: "Admin User",
-          rejectionReason: "Reference number not found"
-        }
-      ];
-      
-      setStudents(pendingStudentsSample);
-      setVerifiedStudents(verifiedStudentsSample);
-      setRejectedStudents(rejectedStudentsSample);
-      setIsLoading(false);
-    }, 800);
   }, [liability, organizationId, navigate]);
 
   const rowsPerPage = 5;
@@ -445,11 +339,11 @@ STARTING BALANCE 4127.18
     let activeData;
     
     if (activeTab === "pending") {
-      activeData = students;
+      activeData = studentFees;
     } else if (activeTab === "verified") {
-      activeData = verifiedStudents;
+      activeData = verifiedStudentFees;
     } else {
-      activeData = rejectedStudents;
+      activeData = rejectedStudentFees;
     }
     
     return activeData.filter((student) => {
@@ -508,7 +402,7 @@ STARTING BALANCE 4127.18
             {liability?.name} - Student Payments
           </h1>
           <p className="text-gray-600 mt-1">
-            {students.length} pending, {verifiedStudents.length} verified, {rejectedStudents.length} rejected
+            {studentFees.length} pending, {verifiedStudentFees.length} verified, {rejectedStudentFees.length} rejected
           </p>
         </div>
       </div>
@@ -669,7 +563,7 @@ STARTING BALANCE 4127.18
         )}
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="w-full flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a63f42]"></div>
         </div>
@@ -694,17 +588,17 @@ STARTING BALANCE 4127.18
               {activeTab === "pending" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{student.name}</span>
-                    <div className="text-xs text-gray-500">{student.srCode}</div>
+                    <span className="font-medium">{student.studentId.first_name} {student.studentId.last_name}</span>
+                    <div className="text-xs text-gray-500">{student.studentId.sr_code}</div>
                     {isStudentMatched(student.id) && (
                       <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
                         Matched
                       </span>
                     )}
                   </div>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.amountPaid)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.date)}</span>
-                  <span style={{ width: "25%" }} className="text-gray-600">{student.referenceNo}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.paymentId?.amount)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.paymentDate)}</span>
+                  <span style={{ width: "25%" }} className="text-gray-600">{student.paymentId?.refNo}</span>
                   <span style={{ width: "20%" }} className="flex items-center space-x-2">
                     <button
                       onClick={(e) => handleViewReceipt(student, e)}
@@ -735,13 +629,13 @@ STARTING BALANCE 4127.18
               {activeTab === "verified" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{student.name}</span>
-                    <div className="text-xs text-gray-500">{student.srCode}</div>
+                    <span className="font-medium">{student.studentId.first_name} {student.studentId.last_name}</span>
+                    <div className="text-xs text-gray-500">{student.studentId.sr_code}</div>
                   </div>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.amountPaid)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.date)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{student.referenceNo}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.verifiedDate)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.paymentId?.amount)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.paymentDate)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{student.paymentId?.refNo}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.statusLastChangedAt)}</span>
                   <span style={{ width: "15%" }} className="flex items-center">
                     <button
                       onClick={(e) => handleViewReceipt(student, e)}
@@ -758,13 +652,13 @@ STARTING BALANCE 4127.18
               {activeTab === "rejected" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{student.name}</span>
-                    <div className="text-xs text-gray-500">{student.srCode}</div>
+                    <span className="font-medium">{student.studentId.first_name} {student.studentId.last_name}</span>
+                    <div className="text-xs text-gray-500">{student.studentId.sr_code}</div>
                   </div>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.amountPaid)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.date)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{student.referenceNo}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.rejectedDate)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.paymentId?.amount)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.paymentDate)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{student.paymentId?.refNo}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.statusLastChangedAt)}</span>
                   <span style={{ width: "15%" }} className="flex items-center">
                     <button
                       onClick={(e) => handleViewReceipt(student, e)}
