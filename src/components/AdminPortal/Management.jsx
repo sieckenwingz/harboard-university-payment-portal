@@ -5,6 +5,7 @@ import ManageReceiptView from "./ManageReceiptView";
 import { useLiabilities } from "./hooks/useLiabilities";
 import { useStudentFees } from "./hooks/useStudentFees";
 import PaymentReceiptModal from "./PaymentReceiptModal";
+import { useFees } from "./hooks/useFees";
 
 const Management = () => {
   const navigate = useNavigate();
@@ -17,14 +18,13 @@ const Management = () => {
   const [selectedStudentFee, setSelectedReceipt] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   
-  // Use our custom hook to fetch organizations and liabilities
   const { 
     organizations: organizationLiabilities, 
     isLoading, 
     error,
     refreshOrganizations
   } = useLiabilities();
-  
+
   /**
    * TODO: Currently only showing student fees for the fee_id 1.
    */

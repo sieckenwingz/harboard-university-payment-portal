@@ -1,5 +1,5 @@
 import { supabase } from "../App";
-import { Fee, LiabilityType, LiabilityName, AcademicYear } from "../models/Fee";
+import { Fee } from "../models/Fee";
 
 /**
  * Uploads a QR code image to storage with proper error handling

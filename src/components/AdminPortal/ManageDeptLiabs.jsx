@@ -5,6 +5,7 @@ import AddLiabilityPopup from "./AddLiabilityPopup";
 import EditLiabilityPopup from "./EditLiabilityPopup";
 import { supabase } from "../../App";
 import { updateFee, getFeeById, deleteFee } from "../../helpers/FeeHelpers";
+import { useFees } from "./hooks/useFees";
 
 const ManageDeptLiabs = () => {
   const location = useLocation();
@@ -19,62 +20,12 @@ const ManageDeptLiabs = () => {
   // Preserve the organization information from location state
   const organization = location.state?.organization;
   
-  const [liabilities, setLiabilities] = useState([]);
-
-  // Critical function - fetch liabilities directly from the database
-  const fetchLiabilities = async () => {
-    setIsLoading(true);
-    
-    // Try to get organization ID from location state
-    let orgId = organization.id;
-    
-    try {
-      // Direct query to fees table for this organization
-      const { data, error } = await supabase
-        .from('fees')
-        .select('*')
-        .eq('organization_id', orgId);
-      
-      if (error) {
-        console.error("Error fetching fees:", error);
-        setIsLoading(false);
-        return;
-      }
-      
-      if (data && data.length > 0) {
-        // Map to component format
-        const mappedLiabilities = data.map(fee => ({
-          id: fee.id.toString(),
-          name: fee.liab_name || 'Unknown Fee',
-          type: fee.liab_type || 'School Fee',
-          amount: fee.amount / 100, // Convert cents to dollars
-          dueDate: fee.deadline ? new Date(fee.deadline).toISOString().split('T')[0] : null,
-          collector: fee.collector_name || '',
-          gcashNumber: fee.account_number || '',
-          academicYear: fee.acad_year || '',
-          period: fee.period_id ? fee.period_id.toString() : '1',
-          qrCode: fee.qr_code || null
-        }));
-        
-        setLiabilities(mappedLiabilities);
-      } else {
-        setLiabilities([]);
-      }
-    } catch (error) {
-      console.error("Error fetching liabilities:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchLiabilities();
-  }, []);
+  const { fees, loading, error } = useFees(organization.id);
   
   const rowsPerPage = 5;
-  const totalPages = Math.ceil(liabilities.length / rowsPerPage);
+  const totalPages = Math.ceil(fees.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentLiabilities = liabilities.slice(startIndex, startIndex + rowsPerPage);
+  const currentLiabilities = fees.slice(startIndex, startIndex + rowsPerPage);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PHP' }).format(amount);
@@ -189,8 +140,8 @@ const ManageDeptLiabs = () => {
     fetchLiabilities();
     
     // Update pagination if needed
-    if ((liabilities.length + 1) > currentPage * rowsPerPage) {
-      setCurrentPage(Math.ceil((liabilities.length + 1) / rowsPerPage));
+    if ((fees.length + 1) > currentPage * rowsPerPage) {
+      setCurrentPage(Math.ceil((fees.length + 1) / rowsPerPage));
     }
   };
   
@@ -213,7 +164,7 @@ const ManageDeptLiabs = () => {
         setDeleteModal({ show: false, liability: null });
         
         // Update pagination if needed
-        const remainingItems = liabilities.length - 1;
+        const remainingItems = fees.length - 1;
         const newTotalPages = Math.ceil(remainingItems / rowsPerPage);
         if (currentPage > newTotalPages && currentPage > 1) {
           setCurrentPage(newTotalPages);
@@ -277,7 +228,7 @@ const ManageDeptLiabs = () => {
         <div className="w-full flex justify-center items-center h-32 py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#a63f42]"></div>
         </div>
-      ) : liabilities.length === 0 ? (
+      ) : fees.length === 0 ? (
         <div className="w-full flex flex-col justify-center items-center h-32 text-gray-500 text-sm bg-gray-50 rounded-b-lg">
           <p>No liabilities found for this organization.</p>
         </div>
@@ -330,7 +281,7 @@ const ManageDeptLiabs = () => {
       )}
       
       {/* Pagination */}
-      {liabilities.length > 0 && (
+      {fees.length > 0 && (
         <div className="w-full flex items-center justify-between mt-6 px-4">
           <span className="text-sm text-gray-600">
             Showing page {currentPage} of {totalPages || 1}

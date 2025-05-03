@@ -184,7 +184,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
         amount: Math.round(parseFloat(formData.amount)), 
         deadline: formData.dueDate,
         collector_name: formData.collectorName,
-        liab_name: formData.liabilityName,
+        name: formData.liabilityName,
         liab_type: formData.liabilityType,
         acad_year: formData.academicYear,
         account_number: formData.gcashNumber
@@ -382,19 +382,15 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
               
               <div className="w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Liability Name *</label>
-                <select
+                <input
+                  type="text"
                   name="liabilityName"
                   value={formData.liabilityName}
                   onChange={handleInputChange}
                   required
-                  disabled={!formData.liabilityType}
                   className="w-full p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
-                >
-                  <option value="">Select name</option>
-                  {getLiabilityNameOptions().map(name => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
+                  placeholder="Enter liability name"
+                />
               </div>
             </div>
             

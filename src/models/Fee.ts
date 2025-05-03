@@ -8,22 +8,6 @@ export enum LiabilityType {
   FEE = 'Fee',  // Fallback
 }
 
-export enum LiabilityName {
-  // School Fees
-  TUITION_FEE = 'Tuition Fee',
-  LABORATORY_FEE = 'Laboratory Fee',
-  LIBRARY_FEE = 'Library Fee',
-  TECHNOLOGY_FEE = 'Technology Fee',
-  ATHLETIC_FEE = 'Athletic Fee',
-  
-  // Membership Fees
-  STUDENT_COUNCIL = 'Student Council',
-  ENGINEERING_SOCIETY = 'Engineering Society',
-  BUSINESS_CLUB = 'Business Club',
-  ARTS_CLUB = 'Arts Club',
-  MEDICAL_SOCIETY = 'Medical Society'
-}
-
 export enum AcademicYear {
   YEAR_2023_2024 = '2023 - 2024',
   YEAR_2024_2025 = '2024 - 2025',
@@ -55,7 +39,7 @@ export class Fee {
         this.createdAt = new Date(data.created_at);
         this.amount = data.amount;
         this.deadline = data.payment_date ? new Date(data.payment_date) : null;
-        this.name = data.liab_name;
+        this.name = data.name;
         this.organizationId = typeof data['organization_id'] === 'number' ? data['organization_id'] : new Organization(data['organization_id']);;
         this.periodId = data.periodId instanceof Map ? data.periodId['id'] : data.periodId;
         this.type = Object.values(LiabilityType).find(v => v === data.liab_type) as LiabilityType | LiabilityType.FEE;
