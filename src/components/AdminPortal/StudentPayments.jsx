@@ -55,12 +55,31 @@ const StudentPayments = () => {
   const { confirmFee } = useConfirmFee();
   const { rejectFee } = useRejectFee();
   
-  useEffect(() => {
-    if (!liability) {
-      navigate(`/organizations/${organizationId}`);
-      return;
+  // In StudentPayments.jsx
+useEffect(() => {
+  const fetchLiabilityData = async () => {
+    // If we don't have liability info from navigation state, fetch it
+    if (!liability || !liability.name) {
+      try {
+        // Fetch liability details from the API
+        const { data, error } = await supabase
+          .from('fees')
+          .select('*')
+          .eq('id', feeId)
+          .single();
+          
+        if (data) {
+          // Update the local liability state
+          setLiability(data);
+        }
+      } catch (error) {
+        console.error("Error fetching liability details:", error);
+      }
     }
-  }, [liability, organizationId, navigate]);
+  };
+  
+  fetchLiabilityData();
+}, []);
 
   const rowsPerPage = 5;
 

@@ -57,7 +57,7 @@ const ManageDeptLiabs = () => {
           name: completeData.name,
           type: completeData.type,
           academicYear: completeData.academicYear,
-          period: completeData.periodId.toString(), // Adjust according to your data structure
+          period: completeData.periodId.toString(),
           amount: completeData.amount / 100, // Convert from cents to display amount
           dueDate: completeData.deadline ? completeData.deadline.toISOString().split('T')[0] : '',
           collector: completeData.collectorName,
@@ -181,6 +181,18 @@ const ManageDeptLiabs = () => {
     setDeleteModal({ show: false, liability: null });
   };
   
+  // Get semester label based on period value
+  const getSemesterLabel = (period) => {
+    if (!period) return '';
+    
+    switch(period.semester) {
+      case "1": return "1st Semester";
+      case "2": return "2nd Semester";
+      case "SUMMER": return "Summer";
+      default: return period.semester;
+    }
+  };
+  
   // Render component
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -195,10 +207,10 @@ const ManageDeptLiabs = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {organization.name} Liabilities
+            {organization.name} 
           </h1>
           <p className="text-gray-500">
-            Manage all financial liabilities for this organization
+            Manage all membership fees for this organization
           </p>
         </div>
       </div>
@@ -213,17 +225,17 @@ const ManageDeptLiabs = () => {
         </button>
       </div>
       
-      {/* Table Header */}
-      <div className="w-full flex justify-between py-4 border-b bg-gray-50 px-4 rounded-t-lg">
-        <span style={{ width: "30%" }} className="text-gray-700 font-semibold">LIABILITY NAME</span>
-        <span style={{ width: "25%" }} className="text-gray-700 font-semibold">AMOUNT</span>
-        <span style={{ width: "30%" }} className="text-gray-700 font-semibold">DUE DATE</span>
-        <span style={{ width: "30%" }} className="text-gray-700 font-semibold">COLLECTOR</span>
-        <span style={{ width: "30%" }} className="text-gray-700 font-semibold">GCASH NUMBER</span>
-        <span style={{ width: "10%" }} className="text-gray-700 font-semibold">ACTIONS</span>
+      {/* Table Header - Removed LIABILITY NAME column */}
+      <div className="w-full grid grid-cols-6 py-4 border-b bg-gray-50 px-4 rounded-t-lg">
+        <span className="text-gray-700 font-semibold">ACADEMIC YEAR</span>
+        <span className="text-gray-700 font-semibold">PERIOD</span>
+        <span className="text-gray-700 font-semibold">AMOUNT</span>
+        <span className="text-gray-700 font-semibold">DUE DATE</span>
+        <span className="text-gray-700 font-semibold">COLLECTOR</span>
+        <span className="text-gray-700 font-semibold text-center">ACTIONS</span>
       </div>
       
-      {/* Table Content */}
+      {/* Table Content - Removed LIABILITY NAME column and adjusted grid */}
       {isLoading ? (
         <div className="w-full flex justify-center items-center h-32 py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#a63f42]"></div>
@@ -237,25 +249,14 @@ const ManageDeptLiabs = () => {
           {currentLiabilities.map((liability) => (
             <div
               key={liability.id}
-              className="w-full flex justify-between py-4 px-4 border-b hover:bg-gray-50"
+              className="w-full grid grid-cols-6 py-4 px-4 border-b hover:bg-gray-50"
             >
-              <span style={{ width: "30%" }} className="text-gray-700">
-                <span className="font-medium">{liability.name}</span>
-                <div className="text-xs text-gray-500">{liability.type}</div>
-              </span>
-              <span style={{ width: "25%" }} className="text-gray-700 font-medium">
-                {formatCurrency(liability.amount)}
-              </span>
-              <span style={{ width: "30%" }} className="text-gray-700">
-                {formatDate(liability.dueDate)}
-              </span>
-              <span style={{ width: "30%" }} className="text-gray-700">
-                {liability.collectorName}
-              </span>
-              <span style={{ width: "30%" }} className="text-gray-700">
-                {liability.accountNumber}
-              </span>
-              <span style={{ width: "10%" }} className="flex space-x-2">
+              <span className="text-gray-700">{liability.academicYear}</span>
+              <span className="text-gray-700">{getSemesterLabel(liability.periodId)}</span>
+              <span className="text-gray-700">{formatCurrency(liability.amount)}</span>
+              <span className="text-gray-700">{formatDate(liability.deadline)}</span>
+              <span className="text-gray-700">{liability.collectorName}</span>
+              <div className="flex space-x-2 justify-center">
                 <button 
                   onClick={(e) => handleEditLiability(liability, e)}
                   className="p-1 text-blue-600 hover:bg-blue-100 rounded-full transition-all duration-200"
@@ -274,7 +275,7 @@ const ManageDeptLiabs = () => {
                 >
                   <Trash2 size={18} />
                 </button>
-              </span>
+              </div>
             </div>
           ))}
         </div>

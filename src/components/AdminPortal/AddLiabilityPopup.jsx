@@ -1,20 +1,13 @@
-// In your AddLiabilityPopup component:
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Upload, CheckCircle, AlertCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../../App"; // Adjust path if needed
+import { supabase } from "../../App";
 
 const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
-  const navigate = useNavigate();
-  
-  // State for form data
   const [formData, setFormData] = useState({
-    organizationId: "", // Will store the ID, not the name
+    organizationId: organization?.id || "",
     periodId: "",
-    liabilityType: "",
-    liabilityName: "",
     academicYear: "",
+    liabilityName: "",
     amount: "",
     dueDate: "",
     collectorName: "",
@@ -24,7 +17,6 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
   
   // State for UI
   const [loading, setLoading] = useState(false);
-  const [organizations, setOrganizations] = useState([]);
   const [periods, setPeriods] = useState([]);
   const [qrPreview, setQrPreview] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -32,51 +24,8 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [formVisible, setFormVisible] = useState(false);
   
-  // Fetch organizations and set the organizationId based on the organization name prop
+  // Fetch periods for dropdown
   useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        // Fetch organizations from database
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('id, name');
-          
-        if (error) throw error;
-        
-        if (data) {
-          setOrganizations(data);
-          console.log("Fetched organizations:", data);
-          
-          // If organization name prop is provided, find matching ID
-          if (organization.organization) {
-            const orgMatch = data.find(org => {
-              // Try several matching strategies
-              return org.name === organization.organization || 
-                    org.name.includes(organization.organization) || 
-                    organization.organization.includes(org.name);
-            });
-            
-            if (orgMatch) {
-              console.log(`Found organization match: ${orgMatch.name} (ID: ${orgMatch.id})`);
-              
-              // Set the organizationId in form data
-              setFormData(prev => ({
-                ...prev,
-                organizationId: orgMatch.id.toString() // Convert to string for form handling
-              }));
-            } else {
-              console.warn(`No organization match found for "${organization}"`);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching organizations:", error);
-      }
-    };
-    
-    fetchOrganizations();
-    
-    // Other initialization (periods, animation)
     const fetchPeriods = async () => {
       try {
         const { data, error } = await supabase
@@ -95,9 +44,9 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     
     fetchPeriods();
     
-    // Set form visible with animation
+    // Animation timing
     setTimeout(() => setFormVisible(true), 50);
-  }, [organization]);
+  }, []);
   
   // Handle input changes
   const handleInputChange = (e) => {
@@ -111,9 +60,6 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    
-    // Debug log
-    console.log(`Updated ${name} to:`, value);
   };
   
   // Handle file upload
@@ -131,29 +77,21 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
   // Validate form
   const validateForm = () => {
     const requiredFields = [
-      'organizationId', 
       'periodId', 
-      'liabilityType', 
-      'liabilityName', 
       'academicYear', 
+      'liabilityName', 
       'amount', 
       'dueDate', 
       'collectorName', 
       'gcashNumber'
     ];
     
-    // Log current form state for debugging
-    console.log("Validating form with data:", formData);
-    
     const missingFields = requiredFields.filter(field => {
-      const isEmpty = !formData[field] || formData[field].toString().trim() === '';
-      console.log(`Field ${field}: ${formData[field]} - isEmpty: ${isEmpty}`);
-      return isEmpty;
+      return !formData[field] || formData[field].toString().trim() === '';
     });
     
     if (missingFields.length > 0) {
-      console.log("Missing fields:", missingFields);
-      setErrorMessage(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      setErrorMessage(`Please fill in all required fields`);
       setShowErrorModal(true);
       return false;
     }
@@ -167,7 +105,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     return true;
   };
   
-  // Submit form
+  // Handle form submission
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     
@@ -185,7 +123,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
         deadline: formData.dueDate,
         collector_name: formData.collectorName,
         name: formData.liabilityName,
-        liab_type: formData.liabilityType,
+        liab_type: "Membership Fee", // Set the type to Membership Fee
         acad_year: formData.academicYear,
         account_number: formData.gcashNumber
       };
@@ -197,7 +135,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
         const filePath = `qrcodes/${fileName}`;
         
         const { error: uploadError } = await supabase.storage
-          .from('fee-qr-codes') // bucket name sa storage
+          .from('fee-qr-codes')
           .upload(filePath, formData.qrCode);
           
         if (uploadError) throw uploadError;
@@ -209,7 +147,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
       // Insert fee into database
       const { data, error } = await supabase
         .from('fees')
-        .insert([newFee], { returning: 'minimal' });
+        .insert([newFee]);
         
       if (error) throw error;
       
@@ -217,7 +155,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
       const newLiability = {
         id: data?.[0]?.id || Date.now().toString(),
         name: formData.liabilityName,
-        type: formData.liabilityType,
+        type: "Membership Fee",
         academicYear: formData.academicYear,
         amount: parseFloat(formData.amount),
         dueDate: formData.dueDate,
@@ -258,26 +196,10 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     setShowErrorModal(false);
   };
   
-  // Get liability name options based on selected type
-  const getLiabilityNameOptions = () => {
-    if (formData.liabilityType === "School Fee") {
-      return ["Tuition Fee", "Laboratory Fee", "Library Fee", "Technology Fee", "Athletic Fee"];
-    } else if (formData.liabilityType === "Membership Fee") {
-      return ["Student Council", "Engineering Society", "Business Club", "Arts Club", "Medical Society"];
-    }
-    return [];
-  };
-  
-  // Find organization name by ID for display
-  const getOrganizationName = (id) => {
-    const org = organizations.find(o => o.id.toString() === id.toString());
-    return org ? org.name : "";
-  };
-  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out"
          style={{ opacity: formVisible ? 1 : 0 }}>
-      <div className={`bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh] transition-all duration-300 ease-in-out ${formVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+      <div className={`bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300 ease-in-out ${formVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
         {/* Header */}
         <div className="bg-gray-50 px-4 py-3 flex justify-between items-center border-b shrink-0">
           <h2 className="text-lg font-bold text-gray-800">Add New Liability</h2>
@@ -291,44 +213,20 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
         </div>
         
         {/* Form */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto py-2 px-4">
-          <div className="space-y-4">
-            {/* Organization - Display name but store ID */}
+        <form onSubmit={handleSubmit} className="overflow-y-auto py-4 px-4">
+          <div className="space-y-5">
+            {/* Organization - Display only */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
-              {organization.organization ? (
-                <>
-                  <input
-                    type="text"
-                    value={organization.organization}
-                    readOnly
-                    className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 text-sm"
-                  />
-                  <input 
-                    type="hidden"
-                    name="organizationId"
-                    value={formData.organizationId}
-                  />
-                </>
-              ) : (
-                <select
-                  name="organizationId"
-                  value={formData.organizationId}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent"
-                >
-                  <option value="">Select organization</option>
-                  {organizations.map(org => (
-                    <option key={org.id} value={org.id}>{org.name}</option>
-                  ))}
-                </select>
-              )}
+              <div className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 text-sm">
+                {organization?.name || "Selected Organization"}
+              </div>
+              <input type="hidden" name="organizationId" value={formData.organizationId} />
             </div>
             
-            {/* Academic Year and Period */}
-            <div className="flex gap-3">
-              <div className="w-1/2">
+            {/* Academic Year and Period - Side by side */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year *</label>
                 <select
                   name="academicYear"
@@ -344,7 +242,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
                 </select>
               </div>
               
-              <div className="w-1/2">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Period *</label>
                 <select
                   name="periodId"
@@ -356,47 +254,17 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
                   <option value="">Select period</option>
                   {periods.map(period => (
                     <option key={period.id} value={period.id}>
-                      {period.year} - {period.semester === "1" ? "1st" : period.semester === "2" ? "2nd" : "Summer"}
+                      {period.semester === "1" ? "1st Semester" : 
+                       period.semester === "2" ? "2nd Semester" : "Summer"}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
             
-            {/* Liability Type and Name */}
-            <div className="flex gap-3">
-              <div className="w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Liability Type *</label>
-                <select
-                  name="liabilityType"
-                  value={formData.liabilityType}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent"
-                >
-                  <option value="">Select type</option>
-                  <option value="School Fee">School Fee</option>
-                  <option value="Membership Fee">Membership Fee</option>
-                </select>
-              </div>
-              
-              <div className="w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Liability Name *</label>
-                <input
-                  type="text"
-                  name="liabilityName"
-                  value={formData.liabilityName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
-                  placeholder="Enter liability name"
-                />
-              </div>
-            </div>
-            
-            {/* Amount and Due Date */}
-            <div className="flex gap-3">
-              <div className="w-1/2">
+            {/* Amount and Due Date - Side by side */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Amount (PHP) *</label>
                 <div className="relative">
                   <input
@@ -414,7 +282,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
                 </div>
               </div>
               
-              <div className="w-1/2">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Due Date *</label>
                 <input
                   type="date"
@@ -427,9 +295,9 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
               </div>
             </div>
             
-            {/* Collector Name and GCash Number */}
-            <div className="flex gap-3">
-              <div className="w-1/2">
+            {/* Collector Name and GCash Number - Side by side */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Collector Name *</label>
                 <input
                   type="text"
@@ -442,7 +310,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
                 />
               </div>
               
-              <div className="w-1/2">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">GCash Number *</label>
                 <input
                   type="text"
@@ -460,8 +328,8 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
             
             {/* QR Code Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">GCash QR Code</label>
-              <div className="flex items-start gap-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">GCash QR Code</label>
+              <div className="flex items-start gap-4">
                 <label className="flex items-center justify-center w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 shrink-0">
                   <input
                     type="file"
@@ -478,7 +346,9 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
                     </div>
                   )}
                 </label>
-                <div className="text-xs text-gray-500 pt-1">Upload the GCash QR code for easy payments</div>
+                <div className="text-xs text-gray-500 pt-2">
+                  Upload the GCash QR code for easy payments
+                </div>
               </div>
             </div>
           </div>
@@ -489,14 +359,14 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
           <button
             type="button"
             onClick={handleCloseWithAnimation}
-            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
             disabled={loading}
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="px-3 py-1.5 bg-[#a63f42] text-sm text-white rounded-md hover:bg-[#8a3538] transition-colors duration-200"
+            className="px-4 py-2 bg-[#a63f42] text-sm text-white rounded-md hover:bg-[#8a3538] transition-colors duration-200"
             disabled={loading}
           >
             {loading ? 'Adding...' : 'Add Liability'}

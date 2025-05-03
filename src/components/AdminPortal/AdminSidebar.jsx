@@ -146,27 +146,6 @@ const AdminSidebar = () => {
         </div>
 
         <div className="absolute bottom-20 left-4 right-4">
-          {!collapsed && (
-            <div className="text-xs font-semibold mb-2 text-gray-400">SUPPORT</div>
-          )}
-
-          <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
-              collapsed ? "justify-center" : ""
-            }
-            ${
-              selectedPage === "Help"
-                ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
-                : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
-            }`}
-            onClick={() => handleSidebarClick("Help")}
-          >
-            <div className="w-[18px] flex justify-center">
-              <HelpCircle size={18} />
-            </div>
-            {!collapsed && <span>Help</span>}
-          </div>
-
           <div
             className={`flex items-center gap-3 px-4 py-3 mt-2 rounded-lg cursor-pointer transition-all duration-200 ${
               collapsed ? "justify-center" : ""

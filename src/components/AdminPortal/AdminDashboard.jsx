@@ -25,9 +25,26 @@ const AdminDashboard = () => {
   };
 
   // Navigate to organization liabilities page
-  const navigateToOrganizationLiabilities = (organization) => {
-    navigate(`/organization-liabilities/${organization.id}`, { state: { organization } });
-  };
+  // In AdminDashboard.jsx
+const navigateToOrganizationLiabilities = (organization) => {
+  // Navigate directly to the student payments view
+  // This assumes you have a default liability ID to use or can get the first one
+  
+  // Get the first liability ID from the organization if available
+  // If not, we'll need to make this a route parameter that can be handled by StudentPayments
+  const firstLiabilityId = organization.liabilityIds?.[0] || "default";
+  
+  // Navigate directly to student payments
+  navigate(`/organizations/${organization.id}/liabilities/${firstLiabilityId}`, {
+    state: { 
+      organization: organization,
+      liability: {
+        id: firstLiabilityId,
+        name: organization.name, // Use org name as default liability name
+      }
+    }
+  });
+};
 
   // Open popup with organization details
   const openOrganizationPopup = (organization, e) => {
@@ -229,13 +246,13 @@ const AdminDashboard = () => {
               >
                 <span style={{ width: "60%" }} className="text-gray-700 font-medium">{item.name}</span>
                 <span style={{ width: "40%" }} className="flex items-center">
-                  <span 
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm ${priorityStyle.bgColor} border ${priorityStyle.borderColor}`} 
-                    style={{ color: priorityStyle.color }}
+                <span 
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm ${priorityStyle.bgColor} border ${priorityStyle.borderColor}`} 
+                  style={{ color: priorityStyle.color }}
                   >
-                    {priorityStyle.icon}
-                    {item.feeCount} pending liabilities
-                  </span>
+                  {priorityStyle.icon}
+                  {item.unpaidStudentCount} unpaid students
+                </span>
                 </span>
                 <span style={{ width: "20%" }}>
                   <button 

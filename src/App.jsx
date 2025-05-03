@@ -120,7 +120,6 @@ function App() {
             <Route path="/admin-help" element={<AdminHelp />} />
             <Route path="/management" element={<Management />} />
             <Route path="/:organizationSlug-liabilities" element={<ManageDeptLiabs />} />
-            <Route path="/organization-liabilities/:organizationId" element={<OrganizationLiabilities />} />
             <Route path="/organizations/:organizationId/liabilities/:liabilityId" element={<StudentPayments />} />
 
             <Route path="/add-new-liability" element={<AddLiabilityPopup />} />
