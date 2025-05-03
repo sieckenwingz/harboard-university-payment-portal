@@ -32,7 +32,7 @@ const StudentPayments = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [selectedStudentFee, setSelectedStudentFee] = useState(null);
   const [confirmationModal, setConfirmationModal] = useState({ show: false, type: null, studentId: null });
   const [isExiting, setIsExiting] = useState(false);
   const [activeTab, setActiveTab] = useState("pending");
@@ -66,7 +66,7 @@ const StudentPayments = () => {
 
   const handleViewReceipt = (student, e) => {
     if (e) e.stopPropagation();
-    setSelectedReceipt(student);
+    setSelectedStudentFee(student);
     setShowPaymentModal(true);
   };
 
@@ -577,45 +577,45 @@ STARTING BALANCE 4127.18
         </div>
       ) : (
         <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
-          {currentPageData.map((student) => (
+          {currentPageData.map((studentFee) => (
             <div
-              key={student.id}
+              key={studentFee.id}
               className={`w-full flex justify-between py-4 px-4 border-b hover:bg-gray-50 ${
-                activeTab === "pending" && isStudentMatched(student.id) ? "bg-green-50" : ""
+                activeTab === "pending" && isStudentMatched(studentFee.id) ? "bg-green-50" : ""
               }`}
             >
               {/* Pending Tab Row */}
               {activeTab === "pending" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{student.studentId.first_name} {student.studentId.last_name}</span>
-                    <div className="text-xs text-gray-500">{student.studentId.sr_code}</div>
-                    {isStudentMatched(student.id) && (
+                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.last_name}</span>
+                    <div className="text-xs text-gray-500">{studentFee.studentId.sr_code}</div>
+                    {isStudentMatched(studentFee.id) && (
                       <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
                         Matched
                       </span>
                     )}
                   </div>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.paymentId?.amount)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.paymentDate)}</span>
-                  <span style={{ width: "25%" }} className="text-gray-600">{student.paymentId?.refNo}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(studentFee.paymentId?.amount)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(studentFee.paymentId?.paymentDate)}</span>
+                  <span style={{ width: "25%" }} className="text-gray-600">{studentFee.paymentId?.refNo}</span>
                   <span style={{ width: "20%" }} className="flex items-center space-x-2">
                     <button
-                      onClick={(e) => handleViewReceipt(student, e)}
+                      onClick={(e) => handleViewReceipt(studentFee, e)}
                       className="p-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                       title="View Receipt"
                     >
                       <Eye size={18} />
                     </button>
                     <button
-                      onClick={(e) => handleConfirmPayment(student.id, e)}
+                      onClick={(e) => handleConfirmPayment(studentFee.id, e)}
                       className="p-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
                       title="Confirm Payment"
                     >
                       <CheckCircle size={18} />
                     </button>
                     <button
-                      onClick={(e) => handleRejectPayment(student.id, e)}
+                      onClick={(e) => handleRejectPayment(studentFee.id, e)}
                       className="p-1.5 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
                       title="Reject Payment"
                     >
@@ -629,16 +629,16 @@ STARTING BALANCE 4127.18
               {activeTab === "verified" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{student.studentId.first_name} {student.studentId.last_name}</span>
-                    <div className="text-xs text-gray-500">{student.studentId.sr_code}</div>
+                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.last_name}</span>
+                    <div className="text-xs text-gray-500">{studentFee.studentId.sr_code}</div>
                   </div>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.paymentId?.amount)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.paymentDate)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{student.paymentId?.refNo}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.statusLastChangedAt)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(studentFee.paymentId?.amount)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(studentFee.paymentId?.paymentDate)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{studentFee.paymentId?.refNo}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(studentFee.paymentId?.statusLastChangedAt)}</span>
                   <span style={{ width: "15%" }} className="flex items-center">
                     <button
-                      onClick={(e) => handleViewReceipt(student, e)}
+                      onClick={(e) => handleViewReceipt(studentFee, e)}
                       className="p-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                       title="View Receipt"
                     >
@@ -652,16 +652,16 @@ STARTING BALANCE 4127.18
               {activeTab === "rejected" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{student.studentId.first_name} {student.studentId.last_name}</span>
-                    <div className="text-xs text-gray-500">{student.studentId.sr_code}</div>
+                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.last_name}</span>
+                    <div className="text-xs text-gray-500">{studentFee.studentId.sr_code}</div>
                   </div>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(student.paymentId?.amount)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.paymentDate)}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{student.paymentId?.refNo}</span>
-                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(student.paymentId?.statusLastChangedAt)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(studentFee.paymentId?.amount)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(studentFee.paymentId?.paymentDate)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{studentFee.paymentId?.refNo}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(studentFee.paymentId?.statusLastChangedAt)}</span>
                   <span style={{ width: "15%" }} className="flex items-center">
                     <button
-                      onClick={(e) => handleViewReceipt(student, e)}
+                      onClick={(e) => handleViewReceipt(studentFee, e)}
                       className="p-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                       title="View Receipt"
                     >
@@ -734,10 +734,9 @@ STARTING BALANCE 4127.18
       )}
 
       {/* Payment Receipt Modal */}
-      {showPaymentModal && selectedReceipt && (
+      {showPaymentModal && selectedStudentFee && (
         <PaymentReceiptModal
-          receipt={selectedReceipt}
-          liability={liability}
+          studentFee={selectedStudentFee}
           formatAmount={formatAmount}
           formatDate={formatDate}
           onClose={() => setShowPaymentModal(false)}

@@ -4,6 +4,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Eye } from "luc
 import ManageReceiptView from "./ManageReceiptView";
 import { useLiabilities } from "./hooks/useLiabilities";
 import { useStudentFees } from "./hooks/useStudentFees";
+import PaymentReceiptModal from "./PaymentReceiptModal";
 
 const Management = () => {
   const navigate = useNavigate();
@@ -13,7 +14,8 @@ const Management = () => {
   const [organizationFilter, setOrganizationFilter] = useState("All Organizations");
   const [liabilityFilter, setLiabilityFilter] = useState("All Liabilities");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [selectedStudentFee, setSelectedReceipt] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   
   // Use our custom hook to fetch organizations and liabilities
   const { 
@@ -58,10 +60,7 @@ const Management = () => {
 
   const handleViewReceipt = (payment) => {
     setSelectedReceipt(payment);
-  };
-
-  const handleCloseReceipt = () => {
-    setSelectedReceipt(null);
+    setShowPaymentModal(true);
   };
 
   // Filter organizations based on search
@@ -101,8 +100,12 @@ const Management = () => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const currentData = displayData.slice(startIndex, startIndex + rowsPerPage);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PHP' }).format(amount);
+  const formatAmount = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 2
+    }).format(amount);
   };
 
   const formatDate = (dateString) => {
@@ -429,10 +432,14 @@ const Management = () => {
       </div>
 
       {/* Payment Receipt Modal */}
-      {selectedReceipt && (
-        <ManageReceiptView 
-          receipt={selectedReceipt} 
-          onClose={handleCloseReceipt}
+      {showPaymentModal && selectedStudentFee && (
+        <PaymentReceiptModal
+          studentFee={selectedStudentFee}
+          formatAmount={formatAmount}
+          formatDate={formatDate}
+          onClose={() => setShowPaymentModal(false)}
+          onConfirm={null}
+          onReject={null}
         />
       )}
     </div>

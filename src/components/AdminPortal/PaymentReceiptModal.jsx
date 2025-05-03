@@ -1,18 +1,47 @@
 //view icon sa student payments sa liabilities sidebar
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
+import { supabase } from "../../App";
 
 const PaymentReceiptModal = ({ 
-  receipt, 
-  liability, 
+  studentFee, 
   formatAmount, 
   formatDate, 
   onClose, 
   onConfirm, 
   onReject 
 }) => {
+  const [receiptUrl, setReceiptUrl] = useState(null);
+
+  /**
+   * TODO: Move (Duplicate from PaymentPopup.jsx)
+   * 
+   * Automatically fetch the receipt signed url everytime the [receiptPath] of
+   * the [selectedLiability] changes.
+   */
+  useEffect(() => {
+    async function fetchImage() {
+      if (studentFee?.paymentId == null) return;
+
+      console.log(studentFee.paymentId.receiptPath);
+
+      const { data, error } = await supabase
+        .storage
+        .from('receipts')
+        .createSignedUrl(studentFee.paymentId.receiptPath, 60); // path inside bucket
+
+      if (data?.signedUrl) {
+        setReceiptUrl(data.signedUrl);
+      } else {
+        console.error(error);
+      }
+    }
+
+    fetchImage();
+  }, [studentFee?.paymentId?.receiptPath]);
+    
   return (
     <motion.div 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -41,9 +70,9 @@ const PaymentReceiptModal = ({
         <div className="relative px-4 pb-60 pt-6">
           {/* Receipt image area */}
           <div className="absolute left-6 top-0 w-48 h-64 rounded-lg border border-gray-300 overflow-hidden bg-gray-100 flex items-center justify-center">
-            {receipt.receiptImage ? (
+            {receiptUrl ? (
               <img 
-                src={receipt.receiptImage} 
+                src={receiptUrl}
                 alt="Payment Receipt"
                 className="w-full h-full object-cover"
               />
@@ -62,13 +91,13 @@ const PaymentReceiptModal = ({
             Reference Number:<br />
             Amount:<br />
             Date of Payment:
-            {receipt.status === "verified" && (
+            {studentFee.status === "verified" && (
               <>
                 <br />Verified Date:<br />
                 Verified By:
               </>
             )}
-            {receipt.status === "rejected" && (
+            {studentFee.status === "rejected" && (
               <>
                 <br />Rejected Date:<br />
                 Rejected By:<br />
@@ -79,28 +108,28 @@ const PaymentReceiptModal = ({
 
           {/* Payment details */}
           <div className="absolute left-[430px] top-0 font-medium">
-            {liability?.name || 'Fee Payment'}<br />
-            {receipt.name}<br />
-            {receipt.srCode}<br />
-            {receipt.referenceNo}<br />
-            {formatAmount(receipt.amountPaid)}<br />
-            {formatDate(receipt.date)}
-            {receipt.status === "verified" && (
+            {studentFee.feeId.name}<br />
+            {studentFee.studentId.first_name} {studentFee.studentId.last_name}<br />
+            {studentFee.studentId.sr_code}<br />
+            {studentFee.paymentId.refNo}<br />
+            {formatAmount(studentFee.paymentId.amount)}<br />
+            {formatDate(studentFee.paymentId.paymentDate)}
+            {studentFee.status === "verified" && (
               <>
-                <br />{formatDate(receipt.verifiedDate)}<br />
-                {receipt.verifiedBy}
+                <br />{formatDate(studentFee.verifiedDate)}<br />
+                {studentFee.verifiedBy}
               </>
             )}
-            {receipt.status === "rejected" && (
+            {studentFee.status === "rejected" && (
               <>
-                <br />{formatDate(receipt.rejectedDate)}<br />
-                {receipt.rejectedBy}<br />
-                <span className="text-red-600">{receipt.rejectionReason}</span>
+                <br />{formatDate(studentFee.rejectedDate)}<br />
+                {studentFee.rejectedBy}<br />
+                <span className="text-red-600">{studentFee.rejectionReason}</span>
               </>
             )}
           </div>
           
-          {receipt.transactionVerified && (
+          {studentFee.transactionVerified && (
             <div className="absolute left-64 top-[280px] font-medium text-green-600">
               ✓ Verified by automatic transaction matching
             </div>
@@ -109,21 +138,25 @@ const PaymentReceiptModal = ({
         
         {onConfirm && onReject && (
           <div className="flex justify-end mt-4 gap-4">
-            <button 
-              onClick={() => onReject(receipt.id)}
-              className="px-4 py-2 text-white rounded-md hover:opacity-90"
-              style={{ backgroundColor: "#CA797C" }}
-            >
-              Reject
-            </button>
+            {onReject && (
+              <button 
+                onClick={() => onReject(studentFee.id)}
+                className="px-4 py-2 text-white rounded-md hover:opacity-90"
+                style={{ backgroundColor: "#CA797C" }}
+              >
+                Reject
+              </button>
+            )}
             
-            <button 
-              onClick={() => onConfirm(receipt.id)}
-              className="px-4 py-2 text-white rounded-md hover:opacity-90"
-              style={{ backgroundColor: "#90D18A", color: "#000" }}
-            >
-              Confirm
-            </button>
+            {onConfirm && (
+              <button 
+                onClick={() => onConfirm(studentFee.id)}
+                className="px-4 py-2 text-white rounded-md hover:opacity-90"
+                style={{ backgroundColor: "#90D18A", color: "#000" }}
+              >
+                Confirm
+              </button>
+            )}
           </div>
         )}
       </motion.div>
