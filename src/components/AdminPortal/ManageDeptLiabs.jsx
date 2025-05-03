@@ -17,13 +17,7 @@ const ManageDeptLiabs = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Preserve the organization information from location state
-  const [organization, setOrganization] = useState(
-    location.state?.organization || "Computer Science"
-  );
-  
-  const [organizationId, setOrganizationId] = useState(
-    location.state?.organizationId || null
-  );
+  const organization = location.state?.organization;
   
   const [liabilities, setLiabilities] = useState([]);
 
@@ -32,44 +26,7 @@ const ManageDeptLiabs = () => {
     setIsLoading(true);
     
     // Try to get organization ID from location state
-    let orgId = organizationId;
-    if (!orgId) {
-      if (location.state?.organizationId) {
-        // If organizationId is directly provided
-        orgId = location.state.organizationId;
-        setOrganizationId(orgId);
-      } else if (location.state?.organization?.id) {
-        // If organization object is provided with id
-        orgId = location.state.organization.id;
-        setOrganizationId(orgId);
-      } else {
-        // If neither is available, try to determine from URL
-        const urlParts = window.location.pathname.split('-');
-        const orgName = urlParts[0].replace('/', '');
-        
-        // Fetch organization ID from name if possible
-        try {
-          const { data, error } = await supabase
-            .from('organizations')
-            .select('id')
-            .eq('name', orgName)
-            .single();
-            
-          if (!error && data) {
-            orgId = data.id;
-            setOrganizationId(data.id);
-          }
-        } catch (error) {
-          console.error("Error finding organization by name:", error);
-        }
-      }
-    }
-    
-    if (!orgId) {
-      console.error("Could not determine organization ID");
-      setIsLoading(false);
-      return;
-    }
+    let orgId = organization.id;
     
     try {
       // Direct query to fees table for this organization
@@ -109,22 +66,10 @@ const ManageDeptLiabs = () => {
       setIsLoading(false);
     }
   };
-
-  // Call fetchLiabilities whenever location or organizationId changes
+  
   useEffect(() => {
     fetchLiabilities();
-  }, [organizationId]);
-  
-  // When the location changes, update our state
-  useEffect(() => {
-    if (location.state?.organization && location.state.organization !== organization) {
-      setOrganization(location.state.organization);
-    }
-    
-    if (location.state?.organizationId && location.state.organizationId !== organizationId) {
-      setOrganizationId(location.state.organizationId);
-    }
-  }, [location]);
+  }, []);
   
   const rowsPerPage = 5;
   const totalPages = Math.ceil(liabilities.length / rowsPerPage);
@@ -284,12 +229,6 @@ const ManageDeptLiabs = () => {
   const cancelDeleteLiability = () => {
     setDeleteModal({ show: false, liability: null });
   };
-
-  // Update location state with liabilities data
-  useEffect(() => {
-    const currentState = { ...location.state, organization, liabilities, organizationId };
-    navigate(location.pathname, { state: currentState, replace: true });
-  }, [liabilities, organization, organizationId]);
   
   // Render component
   return (
@@ -305,7 +244,7 @@ const ManageDeptLiabs = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {organization} Liabilities
+            {organization.organization} Liabilities
           </h1>
           <p className="text-gray-500">
             Manage all financial liabilities for this organization

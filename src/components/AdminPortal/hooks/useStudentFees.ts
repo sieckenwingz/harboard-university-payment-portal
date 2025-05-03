@@ -26,7 +26,7 @@ export const useStudentFees = (feeId: string | null): UseStudentFeesResult => {
             let all: StudentFee[] = [];
             const { data, error } = await supabase
                 .from('student_fees')
-                .select('*, student_id(*), payment_id(*)')
+                .select('*, student_id(*), payment_id(*), fee_id(*, organization_id(*))')
                 .eq('fee_id', feeId);
         
             if (error) {

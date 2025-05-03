@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Eye } from "lucide-react";
 import ManageReceiptView from "./ManageReceiptView";
 import { useLiabilities } from "./hooks/useLiabilities";
+import { useStudentFees } from "./hooks/useStudentFees";
 
 const Management = () => {
   const navigate = useNavigate();
@@ -22,88 +23,10 @@ const Management = () => {
     refreshOrganizations
   } = useLiabilities();
   
-  // State for student payments (still using dummy data for now)
-  const [studentPayments, setStudentPayments] = useState([]);
-  
-  // Generate student payments data
-  useEffect(() => {
-    setStudentPayments(generateStudentPayments());
-  }, [organizationLiabilities]); // Regenerate when organizations change
-  
-  // Your existing student payments generation function
-  const generateStudentPayments = () => {
-    const liabilityTypes = [
-      "School Fee", 
-      "Membership Fee"
-    ];
-    
-    const liabilityNames = {
-      "School Fee": [
-        "Tuition Fee",
-        "Laboratory Fee",
-        "Library Fee",
-        "Technology Fee",
-        "Athletic Fee"
-      ],
-      "Membership Fee": [
-        "Student Council",
-        "Engineering Society",
-        "Business Club",
-        "Arts Club",
-        "Medical Society"
-      ]
-    };
-    
-    const statuses = ["Accepted", "Rejected"];
-    const rejectionReasons = [
-      "Invalid receipt",
-      "Amount mismatch",
-      "Incorrect reference number",
-      "Payment not verified",
-      "Duplicate submission"
-    ];
-    
-    const result = [];
-    
-    // Generate dummy data for student payments
-    for (let i = 0; i < 25; i++) {
-      const orgIndex = Math.floor(Math.random() * (organizationLiabilities.length || 3));
-      const typeKey = liabilityTypes[Math.floor(Math.random() * liabilityTypes.length)];
-      const nameOptions = liabilityNames[typeKey];
-      const nameIndex = Math.floor(Math.random() * nameOptions.length);
-      const amount = Math.floor(Math.random() * 5000) + 1000;
-      const today = new Date();
-      const paymentDate = new Date(today);
-      paymentDate.setDate(today.getDate() - Math.floor(Math.random() * 30));
-      
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const rejectionReason = status === "Rejected" 
-        ? rejectionReasons[Math.floor(Math.random() * rejectionReasons.length)]
-        : null;
-      
-      result.push({
-        id: i + 1,
-        studentId: `2025-${Math.floor(Math.random() * 10000) + 1000}`,
-        studentName: `Student ${i + 1}`,
-        organization: organizationLiabilities[orgIndex]?.organization || "Unknown Org",
-        liabilityName: nameOptions[nameIndex],
-        liabilityType: typeKey,
-        amount: amount,
-        status: status,
-        paymentDate: paymentDate.toISOString().split('T')[0],
-        receiptImage: null,
-        referenceNo: `REF-${Math.floor(Math.random() * 100000) + 100000}`,
-        verifiedDate: status === "Accepted" ? paymentDate.toISOString().split('T')[0] : null,
-        verifiedBy: status === "Accepted" ? "Admin User" : null,
-        rejectedDate: status === "Rejected" ? paymentDate.toISOString().split('T')[0] : null,
-        rejectedBy: status === "Rejected" ? "Admin User" : null,
-        rejectionReason: rejectionReason,
-        transactionVerified: status === "Accepted" ? Math.random() > 0.5 : false
-      });
-    }
-    
-    return result;
-  };
+  /**
+   * TODO: Currently only showing student fees for the fee_id 1.
+   */
+  const { studentFees, verifiedStudentFees, rejectedStudentFees, loading, error: sfError } = useStudentFees(1);
 
   const rowsPerPage = 5;
 
@@ -124,7 +47,7 @@ const Management = () => {
     // Find the organization data to pass to the next screen
     const orgData = organizationLiabilities.find(d => d.organization === organization);
     
-    navigate(`/${organization.replace(/\s+/g, '-').toLowerCase()}-liabilities`, { 
+    navigate(`/${organization.organization.replace(/\s+/g, '-').toLowerCase()}-liabilities`, { 
       state: { 
         organization: organization,
         organizationId: orgData?.id,
@@ -151,7 +74,7 @@ const Management = () => {
   });
 
   // Keep existing student payments filtering logic
-  const filteredStudentPayments = studentPayments.filter((item) => {
+  const filteredStudentPayments = studentFees.filter((item) => {
     if (organizationFilter !== "All Organizations" && item.organization !== organizationFilter) {
       return false;
     }
@@ -304,7 +227,7 @@ const Management = () => {
                 <div
                   key={organization.organization}
                   className="w-full flex justify-between py-4 px-4 border-b hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigateToManageDeptLiabs(organization.organization)}
+                  onClick={() => navigateToManageDeptLiabs(organization)}
                 >
                   <span style={{ width: "70%" }} className="text-gray-700 font-medium">
                     {organization.organization}
@@ -410,13 +333,13 @@ const Management = () => {
                 >
                   <span style={{ width: "20%" }} className="text-gray-700 font-medium">
                     {payment.studentName}
-                    <div className="text-xs text-gray-500">{payment.studentId}</div>
+                    <div className="text-xs text-gray-500">{payment.studentId.first_name} {payment.studentId.last_name}</div>
                   </span>
                   <span style={{ width: "30%" }} className="text-gray-700">
-                    {payment.organization}
+                    {payment.feeId.organizationId.name}
                   </span>
                   <span style={{ width: "20%" }} className="text-gray-700">
-                    {payment.liabilityName}
+                    {payment.feeId.name}
                     <div className="text-xs text-gray-500">{payment.liabilityType}</div>
                   </span>
                   <span style={{ width: "15%" }} className="text-gray-700">
@@ -431,7 +354,7 @@ const Management = () => {
                     </span>
                   </span>
                   <span style={{ width: "15%" }} className="text-gray-700">
-                    {formatDate(payment.paymentDate)}
+                    {formatDate(payment.paymentId.paymentDate)}
                   </span>
                   <span style={{ width: "10%" }} className="flex justify-center">
                     <button 

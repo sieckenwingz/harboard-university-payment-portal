@@ -56,7 +56,7 @@ export class Fee {
         this.amount = data.amount;
         this.deadline = data.payment_date ? new Date(data.payment_date) : null;
         this.name = data.liab_name;
-        this.organizationId = data.organizationId instanceof Map ? data.organizationId['id'] : data.organizationId;
+        this.organizationId = typeof data['organization_id'] === 'number' ? data['organization_id'] : new Organization(data['organization_id']);;
         this.periodId = data.periodId instanceof Map ? data.periodId['id'] : data.periodId;
         this.type = Object.values(LiabilityType).find(v => v === data.liab_type) as LiabilityType | LiabilityType.FEE;
         this.academicYear = Object.values(AcademicYear).find(v => v === data.acad_year) as AcademicYear | AcademicYear.NA;
