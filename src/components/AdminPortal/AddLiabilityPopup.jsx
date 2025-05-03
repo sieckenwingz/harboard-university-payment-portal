@@ -48,12 +48,12 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
           console.log("Fetched organizations:", data);
           
           // If organization name prop is provided, find matching ID
-          if (organization) {
+          if (organization.organization) {
             const orgMatch = data.find(org => {
               // Try several matching strategies
-              return org.name === organization || 
-                    org.name.includes(organization) || 
-                    organization.includes(org.name);
+              return org.name === organization.organization || 
+                    org.name.includes(organization.organization) || 
+                    organization.organization.includes(org.name);
             });
             
             if (orgMatch) {
@@ -296,11 +296,11 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
             {/* Organization - Display name but store ID */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
-              {organization ? (
+              {organization.organization ? (
                 <>
                   <input
                     type="text"
-                    value={organization}
+                    value={organization.organization}
                     readOnly
                     className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 text-sm"
                   />
