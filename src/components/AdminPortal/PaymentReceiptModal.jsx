@@ -86,9 +86,14 @@ const PaymentReceiptModal = ({
             Payment for:<br />
             Student Name:<br />
             SR Code:<br />
-            Reference Number:<br />
-            Amount:<br />
-            Date of Payment:
+            {
+              studentFee.paymentId ? <div>
+                Reference Number:<br />
+                Amount:<br />
+                Date of Payment:
+              </div> : 'Payment'
+            }
+            
             {studentFee.status === "verified" && (
               <>
                 <br />Verified Date:<br />
@@ -109,9 +114,13 @@ const PaymentReceiptModal = ({
             {studentFee.feeId.name}<br />
             {studentFee.studentId.getFullName()}<br />
             {studentFee.studentId.srCode}<br />
-            {studentFee.paymentId.refNo}<br />
-            {formatAmount(studentFee.paymentId.amount)}<br />
-            {formatDate(studentFee.paymentId.paymentDate)}
+            {
+              studentFee.paymentId ? <div>
+                {studentFee.paymentId.refNo}<br />
+                {formatAmount(studentFee.paymentId.amount)}<br />
+                {formatDate(studentFee.paymentId.paymentDate)}
+              </div> : 'No payment yet'
+            }
             {studentFee.status === "verified" && (
               <>
                 <br />{formatDate(studentFee.verifiedDate)}<br />

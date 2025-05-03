@@ -6,6 +6,8 @@ import { useLiabilities } from "./hooks/useLiabilities";
 import { useStudentFees } from "./hooks/useStudentFees";
 import PaymentReceiptModal from "./PaymentReceiptModal";
 import { useFees } from "./hooks/useFees";
+import { useOrganizationsWithFeeCount } from "./hooks/useOrganizationsWithFeeCount";
+import { supabase } from "../../App";
 
 const Management = () => {
   const navigate = useNavigate();
@@ -17,18 +19,15 @@ const Management = () => {
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [selectedStudentFee, setSelectedReceipt] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  
-  const { 
-    organizations: organizationLiabilities, 
-    isLoading, 
-    error,
-    refreshOrganizations
-  } = useLiabilities();
 
-  /**
-   * TODO: Currently only showing student fees for the fee_id 1.
-   */
-  const { studentFees, verifiedStudentFees, rejectedStudentFees, loading, error: sfError } = useStudentFees(1);
+  const { organizations, loading: orgsLoading, error: orgsError } = useOrganizationsWithFeeCount();
+  const [orgIdsForStudentFees, setOrgIdsForStudentFees] = useState([]);
+  
+  const { allStudentFees, pendingStudentFees, verifiedStudentFees, rejectedStudentFees, loading: sfLoading, error: sfError } = useStudentFees(null, orgIdsForStudentFees);
+
+  useEffect(() => {
+    setOrgIdsForStudentFees(organizations.map((o) => o.id));
+  }, [organizations]);
 
   const rowsPerPage = 5;
 
@@ -47,13 +46,10 @@ const Management = () => {
 
   const navigateToManageDeptLiabs = (organization) => {
     // Find the organization data to pass to the next screen
-    const orgData = organizationLiabilities.find(d => d.organization === organization);
-    
-    navigate(`/${organization.organization.replace(/\s+/g, '-').toLowerCase()}-liabilities`, { 
+    navigate(`/${organization.name.replace(/\s+/g, '-').toLowerCase()}-liabilities`, { 
       state: { 
         organization: organization,
-        organizationId: orgData?.id,
-        liabilities: orgData?.liabilities || []
+        organizationId: organization.id,
       } 
     });
   };
@@ -64,7 +60,7 @@ const Management = () => {
   };
 
   // Filter organizations based on search
-  const filteredOrganizations = organizationLiabilities.filter((item) => {
+  const filteredOrganizations = organizations.filter((item) => {
     if (searchTerm && 
         !item.organization.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
@@ -73,7 +69,7 @@ const Management = () => {
   });
 
   // Keep existing student payments filtering logic
-  const filteredStudentPayments = studentFees.filter((item) => {
+  const filteredStudentPayments = allStudentFees.filter((item) => {
     if (organizationFilter !== "All Organizations" && item.organization !== organizationFilter) {
       return false;
     }
@@ -122,10 +118,6 @@ const Management = () => {
     setStatusFilter("All Status");
   };
 
-  const getOrganizationOptions = () => {
-    return ["All Organizations", ...organizationLiabilities.map(org => org.organization)];
-  };
-
   const getLiabilityOptions = () => {
     const liabilityNames = [
       "All Liabilities",
@@ -148,11 +140,11 @@ const Management = () => {
   };
 
   // Render error message if there was an error fetching data
-  if (error) {
+  if (orgsError) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="text-center py-8">
-          <div className="text-red-500 mb-4">Error loading organizations: {error}</div>
+          <div className="text-red-500 mb-4">Error loading organizations: {orgsError}</div>
           <button 
             onClick={refreshOrganizations}
             className="px-4 py-2 bg-[#a63f42] text-white rounded-md hover:bg-[#8a3538]"
@@ -216,7 +208,7 @@ const Management = () => {
             <span style={{ width: "30%" }} className="text-gray-700 font-semibold">LIABILITIES ASSIGNED</span>
           </div>
 
-          {isLoading ? (
+          {orgsLoading ? (
             <div className="w-full flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a63f42]"></div>
             </div>
@@ -228,15 +220,15 @@ const Management = () => {
             <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
               {currentData.map((organization) => (
                 <div
-                  key={organization.organization}
+                  key={organization.id}
                   className="w-full flex justify-between py-4 px-4 border-b hover:bg-gray-50 cursor-pointer"
                   onClick={() => navigateToManageDeptLiabs(organization)}
                 >
                   <span style={{ width: "70%" }} className="text-gray-700 font-medium">
-                    {organization.organization}
+                    {organization.name}
                   </span>
                   <span style={{ width: "30%" }} className="text-red-700">
-                    {organization.count} {organization.count === 1 ? 'liability' : 'liabilities'} assigned
+                    {organization.feeCount} {organization.feeCount === 1 ? 'liability' : 'liabilities'} assigned
                   </span>
                 </div>
               ))}
@@ -256,8 +248,8 @@ const Management = () => {
                   onChange={handleOrganizationFilterChange}
                   className="pl-8 pr-6 py-2 border rounded-md text-gray-700 w-auto appearance-none focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
                 >
-                  {getOrganizationOptions().map(org => (
-                    <option key={org} value={org}>{org}</option>
+                  {organizations.map(org => (
+                    <option key={org.id} value={org.name}>{org.name}</option>
                   ))}
                 </select>
                 <Filter className="absolute left-2 top-2.5 text-gray-500" size={18} />
@@ -319,7 +311,7 @@ const Management = () => {
             <span style={{ width: "10%" }} className="text-gray-700 font-semibold text-center">ACTION</span>
           </div>
 
-          {isLoading ? (
+          {orgsLoading ? (
             <div className="w-full flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a63f42]"></div>
             </div>
@@ -357,7 +349,7 @@ const Management = () => {
                     </span>
                   </span>
                   <span style={{ width: "15%" }} className="text-gray-700">
-                    {formatDate(payment.paymentId.paymentDate)}
+                    {payment.paymentId ? formatDate(payment.paymentId.paymentDate) : 'No date'}
                   </span>
                   <span style={{ width: "10%" }} className="flex justify-center">
                     <button 

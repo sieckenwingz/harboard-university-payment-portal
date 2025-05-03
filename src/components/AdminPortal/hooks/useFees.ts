@@ -16,13 +16,17 @@ export const useFees = (orgId: number): UseFeesResult => {
 
     useEffect(() => {
         const fetchFees = async () => {
-            
+
             setLoading(true);
             let all: Fee[] = [];
-            const { data, error } = await supabase
-                .from('fees')
-                .select('*, organization_id(*), period_id(*)')
-                .eq('organization_id', orgId);
+            const { data, error } = orgId ? 
+                await supabase
+                    .from('fees')
+                    .select('*, organization_id(*), period_id(*)')
+                    .eq('organization_id', orgId) 
+                : await supabase
+                    .from('fees')
+                    .select('*, organization_id(*), period_id(*)');
         
             if (error) {
                 setError(error as Error);

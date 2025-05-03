@@ -51,7 +51,7 @@ const StudentPayments = () => {
     showUnmatched: true
   });
 
-  const { studentFees, verifiedStudentFees, rejectedStudentFees, loading, error } = useStudentFees(feeId);
+  const { allStudentFees, pendingStudentFees, verifiedStudentFees, rejectedStudentFees, loading, error } = useStudentFees(feeId);
   const { confirmFee } = useConfirmFee();
   const { rejectFee } = useRejectFee();
   
@@ -351,7 +351,7 @@ STARTING BALANCE 4127.18
     let activeData;
     
     if (activeTab === "pending") {
-      activeData = studentFees;
+      activeData = pendingStudentFees;
     } else if (activeTab === "verified") {
       activeData = verifiedStudentFees;
     } else {
@@ -414,7 +414,7 @@ STARTING BALANCE 4127.18
             {liability?.name} - Student Payments
           </h1>
           <p className="text-gray-600 mt-1">
-            {studentFees.length} pending, {verifiedStudentFees.length} verified, {rejectedStudentFees.length} rejected
+            {pendingStudentFees.length} pending, {verifiedStudentFees.length} verified, {rejectedStudentFees.length} rejected
           </p>
         </div>
       </div>

@@ -5,46 +5,56 @@ import { Status } from '../../../models/Status';
 import { Student } from '../../../models/Student';
 
 interface UseStudentFeesResult {
-    studentFees: StudentFee[];
+    allStudentFees: StudentFee[];
+    pendingStudentFees: StudentFee[];
     verifiedStudentFees: StudentFee[];
     rejectedStudentFees: StudentFee[];
     loading: boolean;
     error: Error | null;
 }
 
-export const useStudentFees = (feeId: string | null): UseStudentFeesResult => {
-    const [allFees, setAllFees] = useState<StudentFee[]>([]);
-    const [studentFees, setStudentFees] = useState<StudentFee[]>([]);
+export const useStudentFees = (feeId: string | null, orgIds: number[] | null): UseStudentFeesResult => {
+    const [allStudentFees, setAllStudentFees] = useState<StudentFee[]>([]);
+    const [pendingStudentFees, setPendingStudentFees] = useState<StudentFee[]>([]);
     const [verifiedStudentFees, setVerifiedStudentFees] = useState<StudentFee[]>([]);
     const [rejectedStudentFees, setRejectedStudentFees] = useState<StudentFee[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
   
-    const fetchFees = async () => {
-        if (!feeId) return;
-        
+    const fetchFees = async () => {       
+        if (!feeId && (!orgIds || orgIds.length === 0)) return;
+
         setLoading(true);
         let all: StudentFee[] = [];
-        const { data, error } = await supabase
-            .from('student_fees')
-            .select('*, student_id(*), payment_id(*), fee_id(*, organization_id(*))')
-            .eq('fee_id', feeId);
+        const { data, error } = feeId ? 
+            await supabase
+                .from('student_fees')
+                .select('*, student_id(*), payment_id(*), fee_id(*, organization_id(*))')
+                .eq('fee_id', feeId) 
+            : await supabase
+                .from('student_fees')
+                .select('*, student_id(*), payment_id(*), fee_id!inner(*, organization_id!inner(*))')
+                .in('fee_id.organization_id.id', orgIds!);
     
         if (error) {
             setError(error as Error);
         } else if (data) {
             all = data.map((d) => new StudentFee(d));
-            setAllFees(all);
+            setAllStudentFees(all);
         }
 
         setLoading(false);
     };
 
     useEffect(() => {
-        setStudentFees(allFees.filter((fee) => fee.status == Status.UNDER_REVIEW));
-        setVerifiedStudentFees(allFees.filter((fee) => fee.status == Status.PAID));
-        setRejectedStudentFees(allFees.filter((fee) => fee.status == Status.REJECTED));
-    }, [allFees]);
+        fetchFees();
+    }, [feeId, orgIds]);
+
+    useEffect(() => {
+        setPendingStudentFees(allStudentFees.filter((fee) => fee.status == Status.UNDER_REVIEW));
+        setVerifiedStudentFees(allStudentFees.filter((fee) => fee.status == Status.PAID));
+        setRejectedStudentFees(allStudentFees.filter((fee) => fee.status == Status.REJECTED));
+    }, [allStudentFees]);
 
     useEffect(() => {
         fetchFees();
@@ -77,5 +87,5 @@ export const useStudentFees = (feeId: string | null): UseStudentFeesResult => {
         };
     }, [feeId]);
   
-    return { studentFees, verifiedStudentFees, rejectedStudentFees, loading, error };
+    return { allStudentFees, pendingStudentFees, verifiedStudentFees, rejectedStudentFees, loading, error };
 };
