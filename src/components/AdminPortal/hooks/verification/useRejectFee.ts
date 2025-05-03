@@ -15,21 +15,12 @@ export const useRejectFee = () => {
     setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase
-      .from('payments')
-      .update({
-        checked_by: user.id,
-        status_last_changed_at: new Date(), // TODO: Consider using server time instead of client time
+    const { data, error } = await supabase.functions.invoke('resolve-payment', {
+      body: {
+        payment_id: paymentId,
         status: getEnumKeyByValue(Status, Status.REJECTED),
-      })
-      .eq('id', paymentId);
-
-    if (error) {
-      setError(error);
-      setData(null);
-    } else {
-      setData(data);
-    }
+      }
+    });
 
     setLoading(false);
     return { data, error };
