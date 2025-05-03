@@ -21,6 +21,8 @@ import PaymentReceiptModal from "./PaymentReceiptModal";
 import TransactionProcessingModal from "./TransactionProcessingModal";
 import ConfirmationModal from "./ConfirmationModal";
 import { useStudentFees } from "./hooks/useStudentFees";
+import { useConfirmFee } from "./hooks/verification/useConfirmFee";
+import { useRejectFee } from "./hooks/verification/useRejectFee";
 
 const StudentPayments = () => {
   const { organizationId, liabilityId: feeId } = useParams();
@@ -50,6 +52,8 @@ const StudentPayments = () => {
   });
 
   const { studentFees, verifiedStudentFees, rejectedStudentFees, loading, error } = useStudentFees(feeId);
+  const { confirmFee } = useConfirmFee();
+  const { rejectFee } = useRejectFee();
   
   useEffect(() => {
     if (!liability) {
@@ -70,55 +74,63 @@ const StudentPayments = () => {
     setShowPaymentModal(true);
   };
 
-  const handleConfirmPayment = (studentId, e) => {
+  const handleConfirmPayment = async (paymentId, e) => {
     if (e) e.stopPropagation();
+    const { _, error: err } = await confirmFee(paymentId.id);
     setShowPaymentModal(false);
-    setConfirmationModal({
-      show: true,
-      type: 'confirm',
-      studentId
-    });
+    if (!err) {
+      setConfirmationModal({
+        show: true,
+        type: 'confirm',
+        studentId: ''
+      })
+    } else {
+      console.log('confirm error')
+    }
   };
 
-  const handleRejectPayment = (studentId, e) => {
+  const handleRejectPayment = async (paymentId, e) => {
     if (e) e.stopPropagation();
+    const { _, error: err } = await rejectFee(paymentId.id);
     setShowPaymentModal(false);
-    setConfirmationModal({
-      show: true,
-      type: 'reject',
-      studentId
-    });
+    if (!err) {
+      setConfirmationModal({
+        show: true,
+        type: 'reject',
+        studentId: ''
+      });
+    } else {
+      console.log('confirm error')
+    }
   };
 
   const processPaymentAction = () => {
     // get the student from pending list
-    const student = students.find(s => s.id === confirmationModal.studentId);
+    // const student = students.find(s => s.id === confirmationModal.studentId);
     
-    if (confirmationModal.type === 'confirm' && student) {
-      // add to verified students
-      const verifiedStudent = {
-        ...student,
-        status: "verified",
-        verifiedDate: new Date().toISOString().split('T')[0],
-        verifiedBy: "Admin User"
-      };
-      setVerifiedStudents(prev => [...prev, verifiedStudent]);
-    } else if (confirmationModal.type === 'reject' && student) {
-      // add to rejected students
-      const rejectedStudent = {
-        ...student,
-        status: "rejected",
-        rejectedDate: new Date().toISOString().split('T')[0],
-        rejectedBy: "Admin User",
-        rejectionReason: "Payment verification failed"
-      };
-      setRejectedStudents(prev => [...prev, rejectedStudent]);
-    }
+    // if (confirmationModal.type === 'confirm' && student) {
+    //   // add to verified students
+    //   const verifiedStudent = {
+    //     ...student,
+    //     status: "verified",
+    //     verifiedDate: new Date().toISOString().split('T')[0],
+    //     verifiedBy: "Admin User"
+    //   };
+    // } else if (confirmationModal.type === 'reject' && student) {
+    //   // add to rejected students
+    //   const rejectedStudent = {
+    //     ...student,
+    //     status: "rejected",
+    //     rejectedDate: new Date().toISOString().split('T')[0],
+    //     rejectedBy: "Admin User",
+    //     rejectionReason: "Payment verification failed"
+    //   };
+    // }
     
-    // remove from pending students
-    setStudents(prevStudents => 
-      prevStudents.filter(s => s.id !== confirmationModal.studentId)
-    );
+    // // remove from pending students
+    // setStudents(prevStudents => 
+    //   prevStudents.filter(s => s.id !== confirmationModal.studentId)
+    // );
     
     setIsExiting(true);
     setTimeout(() => {
@@ -608,14 +620,14 @@ STARTING BALANCE 4127.18
                       <Eye size={18} />
                     </button>
                     <button
-                      onClick={(e) => handleConfirmPayment(studentFee.id, e)}
+                      onClick={(e) => handleConfirmPayment(studentFee.paymentId, e)}
                       className="p-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
                       title="Confirm Payment"
                     >
                       <CheckCircle size={18} />
                     </button>
                     <button
-                      onClick={(e) => handleRejectPayment(studentFee.id, e)}
+                      onClick={(e) => handleRejectPayment(studentFee.paymentId, e)}
                       className="p-1.5 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
                       title="Reject Payment"
                     >
