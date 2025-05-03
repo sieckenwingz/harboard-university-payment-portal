@@ -1,4 +1,5 @@
 import { parseStatus, Status } from "./models/Status";
+import { camelCase } from 'lodash';
 
 export const getStatus = (fee) => {
   const payment_id = fee['payment_id'];
@@ -27,3 +28,11 @@ export const formatDate = (dateString) => {
     return dateString; // Fallback to original format
   }
   };
+
+export const toCamelCase = (obj) => {
+  const result = {};
+  Object.keys(obj).forEach(key => {
+    result[camelCase(key)] = obj[key];
+  });
+  return result;
+};

@@ -4,125 +4,24 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Users, Clock, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import ViewDetailsPopup from "./ViewDetailsPopup"; 
 import { supabase } from "../../App";
+import { useOrganizationsWithFeeCount } from "./hooks/useOrganizationsWithFeeCount";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("Status");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState(null); 
-  const [organizations, setOrganizations] = useState([]);
-  const [debug, setDebug] = useState(null); // For debugging
-  
-  // Fetch organizations with direct database query
-  const fetchOrganizationsDirectly = async () => {
-    setIsLoading(true);
-    
-    try {
-      console.log("Fetching organizations directly");
-      
-      // 1. First get all organizations
-      const { data: orgs, error: orgError } = await supabase
-        .from('organizations')
-        .select('id, name');
-        
-      if (orgError) {
-        console.error('Error fetching organizations:', orgError);
-        setDebug({ error: 'Failed to fetch organizations', details: orgError });
-        return;
-      }
-      
-      console.log('Organizations from database:', orgs);
-      setDebug({ organizations: orgs });
-      
-      // 2. Get all fees from database to count
-      const { data: allFees, error: feesError } = await supabase
-        .from('fees')
-        .select('*');
-      
-      if (feesError) {
-        console.error('Error fetching fees:', feesError);
-        setDebug(prev => ({ ...prev, feesError }));
-        return;
-      }
-      
-      console.log('All fees from database:', allFees);
-      setDebug(prev => ({ ...prev, allFees }));
-      
-      // 3. Process each organization to count its fees
-      const orgsWithPendingCounts = orgs.map(org => {
-        // Filter fees by this organization ID
-        const orgFees = allFees.filter(fee => fee.organization_id === org.id);
-        const pendingCount = orgFees.length; // Count total fees for this organization
-        
-        return {
-          id: org.id,
-          name: org.name, 
-          type: "Academic Organization",
-          pendingVerifications: pendingCount,
-          lastUpdate: new Date().toISOString().split('T')[0]
-        };
-      });
-      
-      console.log('Organizations with pending counts:', orgsWithPendingCounts);
-      setDebug(prev => ({ ...prev, orgsWithPendingCounts }));
-      
-      setOrganizations(orgsWithPendingCounts);
-    } catch (error) {
-      console.error('Error in fetchOrganizationsDirectly:', error);
-      setDebug(prev => ({ ...prev, fetchError: error.message }));
-      
-      // Use fallback data if needed
-      const fallbackOrgs = [
-        {
-          id: 1,
-          name: "Student Services Center",
-          type: "Academic Organization",
-          pendingVerifications: 5,
-          lastUpdate: new Date().toISOString().split('T')[0]
-        },
-        {
-          id: 2,
-          name: "College of Engineering",
-          type: "Academic Organization",
-          pendingVerifications: 3,
-          lastUpdate: new Date().toISOString().split('T')[0]
-        },
-        {
-          id: 3,
-          name: "Computer Science Research Society",
-          type: "Academic Organization",
-          pendingVerifications: 2,
-          lastUpdate: new Date().toISOString().split('T')[0]
-        }
-      ];
-      
-      setOrganizations(fallbackOrgs);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    fetchOrganizationsDirectly();
-  }, []);
-  
+  const { organizations, loading, error } = useOrganizationsWithFeeCount();
 
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
 
   const rowsPerPage = 5;
 
   const handleDropdownChange = (e, filterType) => {
     if (filterType === "Status") setStatusFilter(e.target.value);
-  };
-
-  const updateOrganizationData = (organizationId, newData) => {
-    setOrganizations(prevOrganizations => 
-      prevOrganizations.map(item => 
-        item.id === organizationId ? { ...item, ...newData } : item
-      )
-    );
   };
 
   // Navigate to organization liabilities page
@@ -145,7 +44,7 @@ const AdminDashboard = () => {
 
   // Handle data changes from popup if needed
   const handlePopupDataChange = (organizationId, newData) => {
-    updateOrganizationData(organizationId, newData);
+    // updateOrganizationData(organizationId, newData);
     closePopup();
   };
 
@@ -310,7 +209,7 @@ const AdminDashboard = () => {
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">ACTIONS</span>
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="w-full flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a63f42]"></div>
         </div>
@@ -335,7 +234,7 @@ const AdminDashboard = () => {
                     style={{ color: priorityStyle.color }}
                   >
                     {priorityStyle.icon}
-                    {item.pendingVerifications} pending liabilities
+                    {item.feeCount} pending liabilities
                   </span>
                 </span>
                 <span style={{ width: "20%" }}>

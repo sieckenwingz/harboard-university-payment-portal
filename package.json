@@ -14,6 +14,7 @@
     "antd": "^5.24.6",
     "framer-motion": "^12.6.5",
     "html2pdf.js": "^0.10.3",
+    "lodash": "^4.17.21",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.487.0",
     "react": "^19.0.0",
