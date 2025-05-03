@@ -4,7 +4,8 @@ import { Period } from "./Period";
 // Define enums for type safety
 export enum LiabilityType {
   SCHOOL_FEE = 'School Fee',
-  MEMBERSHIP_FEE = 'Membership Fee'
+  MEMBERSHIP_FEE = 'Membership Fee',
+  FEE = 'Fee',  // Fallback
 }
 
 export enum LiabilityName {
@@ -25,7 +26,8 @@ export enum LiabilityName {
 
 export enum AcademicYear {
   YEAR_2023_2024 = '2023 - 2024',
-  YEAR_2024_2025 = '2024 - 2025'
+  YEAR_2024_2025 = '2024 - 2025',
+  NA = ''
 }
 
 export class Fee {
@@ -49,83 +51,19 @@ export class Fee {
           throw new Error('Invalid data provided to Fee constructor');
         }
         
-        console.log('Constructing Fee from data:', data);
-        
         this.id = data.id ?? 0;
-        
-        // Handle created_at field
-        if (data.created_at) {
-          try {
-            this.createdAt = new Date(data.created_at);
-          } catch (error) {
-            console.error('Error parsing created_at:', error);
-            this.createdAt = new Date();
-          }
-        } else {
-          this.createdAt = new Date();
-        }
-        
-        // Handle amount field - Convert string to number if needed
-        this.amount = typeof data.amount === 'string' ? parseFloat(data.amount) : (data.amount ?? 0);
-        
-        // Handle deadline field - parse if string, use as is if Date, or null if invalid/missing
-        if (data.deadline) {
-          try {
-            this.deadline = data.deadline instanceof Date ? data.deadline : new Date(data.deadline);
-          } catch (error) {
-            console.error('Error parsing deadline:', error);
-            this.deadline = null;
-          }
-        } else {
-          this.deadline = null;
-        }
-        
-        // Handle naming variations in the database
-        this.name = data.liab_name ?? data.name ?? 'Unknown Fee';
-        
-        // Handle type field with fallback
-        const typeString = data.liab_type ?? data.type ?? LiabilityType.SCHOOL_FEE;
-        this.type = Object.values(LiabilityType).includes(typeString as LiabilityType) 
-          ? typeString as LiabilityType 
-          : LiabilityType.SCHOOL_FEE;
-        
-        // Handle academicYear field with fallback
-        const yearString = data.acad_year ?? data.academicYear ?? AcademicYear.YEAR_2024_2025;
-        this.academicYear = Object.values(AcademicYear).includes(yearString as AcademicYear)
-          ? yearString as AcademicYear
-          : AcademicYear.YEAR_2024_2025;
-        
-        // Handle organization_id field - can be an object or a number
-        if (data.organization_id && typeof data.organization_id === 'object' && 'id' in data.organization_id) {
-          this.organizationId = data.organization_id;
-        } else if (data.organizationId && typeof data.organizationId === 'object' && 'id' in data.organizationId) {
-          this.organizationId = data.organizationId;
-        } else {
-          this.organizationId = data.organization_id ?? data.organizationId ?? 0;
-        }
-        
-        // Handle period_id field - can be an object or a number
-        if (data.period_id && typeof data.period_id === 'object' && 'id' in data.period_id) {
-          this.periodId = data.period_id;
-        } else if (data.periodId && typeof data.periodId === 'object' && 'id' in data.periodId) {
-          this.periodId = data.periodId;
-        } else {
-          this.periodId = data.period_id ?? data.periodId ?? 0;
-        }
-        
-        // Handle collector_name field
-        this.collectorName = data.collector_name ?? data.collectorName ?? '';
-        
-        // Handle account_number field - ensure it's a string
-        this.accountNumber = data.account_number 
-          ? data.account_number.toString() 
-          : (data.accountNumber 
-            ? data.accountNumber.toString() 
-            : '');
-        
-        // Handle qr_code field
-        this.qrCode = data.qr_code ?? data.qrCode ?? null;
-        
+        this.createdAt = new Date(data.created_at);
+        this.amount = data.amount;
+        this.deadline = data.payment_date ? new Date(data.payment_date) : null;
+        this.name = data.liab_name;
+        this.organizationId = data.organizationId instanceof Map ? data.organizationId['id'] : data.organizationId;
+        this.periodId = data.periodId instanceof Map ? data.periodId['id'] : data.periodId;
+        this.type = Object.values(LiabilityType).find(v => v === data.liab_type) as LiabilityType | LiabilityType.FEE;
+        this.academicYear = Object.values(AcademicYear).find(v => v === data.acad_year) as AcademicYear | AcademicYear.NA;
+        this.collectorName = data.collector_name;
+        this.accountNumber = data.account_number;
+        this.qrCode = data.qr_code;
+
       } catch (error) {
         console.error('Error constructing Fee object:', error);
         // Set default values for required fields
@@ -134,16 +72,17 @@ export class Fee {
         this.amount = 0;
         this.deadline = null;
         this.name = 'Error Fee';
-        this.type = LiabilityType.SCHOOL_FEE;
-        this.academicYear = AcademicYear.YEAR_2024_2025;
-        this.organizationId = 0;
-        this.periodId = 0;
+        this.type = LiabilityType.FEE;
+        this.academicYear = AcademicYear.NA;
+        this.organizationId = -1;
+        this.periodId = -1;
         this.collectorName = '';
         this.accountNumber = '';
         this.qrCode = null;
       }
     }
       
+    // TODO: Move to a single utils function to prevent duplicate code
     // Helper method to format amount for display
     get formattedAmount(): string {
         return new Intl.NumberFormat('en-PH', {
