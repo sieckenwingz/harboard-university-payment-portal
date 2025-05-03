@@ -109,8 +109,8 @@ const PaymentReceiptModal = ({
           {/* Payment details */}
           <div className="absolute left-[430px] top-0 font-medium">
             {studentFee.feeId.name}<br />
-            {studentFee.studentId.first_name} {studentFee.studentId.last_name}<br />
-            {studentFee.studentId.sr_code}<br />
+            {studentFee.studentId.getFullName()}<br />
+            {studentFee.studentId.srCode}<br />
             {studentFee.paymentId.refNo}<br />
             {formatAmount(studentFee.paymentId.amount)}<br />
             {formatDate(studentFee.paymentId.paymentDate)}

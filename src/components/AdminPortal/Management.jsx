@@ -336,7 +336,7 @@ const Management = () => {
                 >
                   <span style={{ width: "20%" }} className="text-gray-700 font-medium">
                     {payment.studentName}
-                    <div className="text-xs text-gray-500">{payment.studentId.first_name} {payment.studentId.last_name}</div>
+                    <div className="text-xs text-gray-500">{payment.studentId.getFullName()}</div>
                   </span>
                   <span style={{ width: "30%" }} className="text-gray-700">
                     {payment.feeId.organizationId.name}

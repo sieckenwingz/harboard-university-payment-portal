@@ -588,8 +588,8 @@ STARTING BALANCE 4127.18
               {activeTab === "pending" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.last_name}</span>
-                    <div className="text-xs text-gray-500">{studentFee.studentId.sr_code}</div>
+                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.getFullName()}</span>
+                    <div className="text-xs text-gray-500">{studentFee.studentId.srCode}</div>
                     {isStudentMatched(studentFee.id) && (
                       <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
                         Matched
@@ -629,8 +629,8 @@ STARTING BALANCE 4127.18
               {activeTab === "verified" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.last_name}</span>
-                    <div className="text-xs text-gray-500">{studentFee.studentId.sr_code}</div>
+                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.getFullName()}</span>
+                    <div className="text-xs text-gray-500">{studentFee.studentId.srCode}</div>
                   </div>
                   <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(studentFee.paymentId?.amount)}</span>
                   <span style={{ width: "30%" }} className="text-gray-600">{formatDate(studentFee.paymentId?.paymentDate)}</span>
@@ -652,8 +652,8 @@ STARTING BALANCE 4127.18
               {activeTab === "rejected" && (
                 <>
                   <div style={{ width: "30%" }} className="text-gray-700">
-                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.last_name}</span>
-                    <div className="text-xs text-gray-500">{studentFee.studentId.sr_code}</div>
+                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.getFullName()}</span>
+                    <div className="text-xs text-gray-500">{studentFee.studentId.srCode}</div>
                   </div>
                   <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(studentFee.paymentId?.amount)}</span>
                   <span style={{ width: "30%" }} className="text-gray-600">{formatDate(studentFee.paymentId?.paymentDate)}</span>

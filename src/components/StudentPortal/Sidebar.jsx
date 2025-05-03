@@ -33,7 +33,7 @@ const Sidebar = () => {
   
   // Get user details for display
   const fullName = getFullName();
-  const firstName = userData.firstName || "Loading...";
+  const firstName = userData?.firstName || "Loading...";
   const avatarLetter = getAvatarLetter();
   const srCode = getSrCode();
   

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../App';
+import { Student } from '../../../models/Student';
 
 /**
  * Custom hook to fetch and manage user data from Supabase
@@ -7,14 +8,7 @@ import { supabase } from '../../../App';
  * @returns {Object} User data, loading state, error state, and utility functions
  */
 const useUserData = () => {
-  const [userData, setUserData] = useState({
-    id: null,
-    firstName: "",
-    lastName: "",
-    srCode: "",
-    createdAt: null,
-    // Add any other fields you need from the students table
-  });
+  const [userData, setUserData] = useState(null);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,6 +45,7 @@ const useUserData = () => {
       if (studentError) {
         console.error('Error fetching student data:', studentError);
         
+        // TODO: remove in final version
         // Fallback: Try to find any student data as a demo
         if (process.env.NODE_ENV === 'development') {
           console.log('Attempting to fetch fallback student data for development...');
@@ -77,13 +72,7 @@ const useUserData = () => {
         }
       } else if (studentData) {
         // Successfully retrieved student data
-        setUserData({
-          id: studentData.id,
-          firstName: studentData.first_name,
-          lastName: studentData.last_name,
-          srCode: studentData.sr_code,
-          createdAt: studentData.created_at,
-        });
+        setUserData(new Student(studentData));
       }
     } catch (err) {
       console.error('Error in fetchUserData:', err);
@@ -98,7 +87,7 @@ const useUserData = () => {
    * @returns {string} Full name or loading placeholder
    */
   const getFullName = () => {
-    return userData.firstName && userData.lastName 
+    return userData?.firstName && userData?.lastName 
       ? `${userData.firstName} ${userData.lastName}` 
       : "Loading...";
   };
@@ -108,7 +97,7 @@ const useUserData = () => {
    * @returns {string} First letter or placeholder
    */
   const getAvatarLetter = () => {
-    return userData.firstName ? userData.firstName.charAt(0) : "?";
+    return userData?.firstName ? userData?.firstName.charAt(0) : "?";
   };
 
   /**
@@ -116,7 +105,7 @@ const useUserData = () => {
    * @returns {string} SR Code or loading placeholder
    */
   const getSrCode = () => {
-    return userData.srCode || "Loading...";
+    return userData?.srCode || "Loading...";
   };
   
   // Fetch user data on component mount

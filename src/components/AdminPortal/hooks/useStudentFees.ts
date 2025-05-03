@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../App';
 import { StudentFee } from '../../../models/StudentFee';
 import { Status } from '../../../models/Status';
+import { Student } from '../../../models/Student';
 
 interface UseStudentFeesResult {
     studentFees: StudentFee[];
