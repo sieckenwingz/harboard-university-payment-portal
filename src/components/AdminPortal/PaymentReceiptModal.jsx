@@ -25,8 +25,6 @@ const PaymentReceiptModal = ({
     async function fetchImage() {
       if (studentFee?.paymentId == null) return;
 
-      console.log(studentFee.paymentId.receiptPath);
-
       const { data, error } = await supabase
         .storage
         .from('receipts')
