@@ -250,10 +250,10 @@ const ManageDeptLiabs = () => {
                 {formatDate(liability.dueDate)}
               </span>
               <span style={{ width: "30%" }} className="text-gray-700">
-                {liability.collector}
+                {liability.collectorName}
               </span>
               <span style={{ width: "30%" }} className="text-gray-700">
-                {liability.gcashNumber}
+                {liability.accountNumber}
               </span>
               <span style={{ width: "10%" }} className="flex space-x-2">
                 <button 
