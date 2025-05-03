@@ -9,7 +9,6 @@ const LiabilitiesDashboard = () => {
   const [loading, setLoading] = useState(true)
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedFilter, setSelectedFilter] = useState("All liabilities");
   const [dateRange, setDateRange] = useState("Date Range");
   const [statusFilter, setStatusFilter] = useState("Status");
   const [amountFilter, setAmountFilter] = useState("Amount");
@@ -80,11 +79,6 @@ const LiabilitiesDashboard = () => {
 
   const rowsPerPage = 5;
 
-  const handleFilterClick = (filter) => {
-    setSelectedFilter(filter);
-    setCurrentPage(1);
-  };
-
   const handleDropdownChange = (e, filterType) => {
     if (filterType === "Date Range") setDateRange(e.target.value);
     else if (filterType === "Status") setStatusFilter(e.target.value);
@@ -100,11 +94,7 @@ const LiabilitiesDashboard = () => {
   };
 
   const filteredLiabilities = fees.filter((item) => {
-    // filter by fee type (School Fee or Membership Fee)
-    if (selectedFilter === "School Fee" && item.type !== "School Fee") return false;
-    if (selectedFilter === "Membership Fee" && item.type !== "Membership Fee") return false;
-    
-    // filter by status (Paid Unpaid Under Review REjected)
+    // filter by status (Paid Unpaid Under Review Rejected)
     if (statusFilter !== "Status" && statusFilter !== item.status) return false;
     
     // filter by search term
@@ -246,21 +236,7 @@ const LiabilitiesDashboard = () => {
         </div>
       </div>
 
-      <div className="w-full flex items-center border-b pb-2 mt-6 gap-8">
-        {["All liabilities", "School Fee", "Membership Fee"].map((filter) => (
-          <span
-            key={filter}
-            className={`cursor-pointer px-2 pb-1 transition-all duration-200 ease-in-out ${
-              selectedFilter === filter
-                ? "text-[#a63f42] font-semibold border-b-2 border-[#a63f42]"
-                : "text-gray-600 hover:text-[#a63f42] border-b-2 border-transparent"
-            }`}
-            onClick={() => handleFilterClick(filter)}
-          >
-            {filter}
-          </span>
-        ))}
-      </div>
+      {/* Removed filter tabs section */}
 
       <div className="w-full flex items-center mt-6 gap-6 flex-wrap">
         <div className="flex gap-2 items-center">

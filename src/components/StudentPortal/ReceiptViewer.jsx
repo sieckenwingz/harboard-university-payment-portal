@@ -77,11 +77,11 @@ const ReceiptViewer = ({ payment, onClose }) => {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-gray-600">Name:</p>
-                    <p className="font-medium">{fullName}</p>
+                    <p className="font-medium">{fullName || "Student Name"}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Student ID:</p>
-                    <p className="font-medium">{userData.srCode || "Loading..."}</p>
+                    <p className="font-medium">{userData?.srCode || "SR-XXXXX"}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Program:</p>
