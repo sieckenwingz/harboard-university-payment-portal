@@ -3,8 +3,10 @@ import useUserData from './hooks/useUserData';
 
 const Help = () => {
   const { userData, getFullName } = useUserData();
+  
+  // Check if userData is loaded before accessing properties
   const studentName = getFullName();
-  const srCode = userData.srCode || "Loading...";
+  const srCode = userData?.srCode || "Loading...";
 
   const faqItems = [
     {
@@ -29,7 +31,7 @@ const Help = () => {
     <>
       <h1 className="text-gray-700 text-[28px] font-medium">Help & Support</h1>
       
-      {/* Personalized greeting */}
+      {/* Personalized greeting - With null check */}
       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 my-4">
         <p className="text-lg text-blue-800">
           Hello {studentName} (SR-Code: {srCode}), how can we help you today?

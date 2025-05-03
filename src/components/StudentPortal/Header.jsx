@@ -1,9 +1,22 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../../App";
 
 const Header = () => {
+  const navigate = useNavigate();
+
+  const handleHeaderClick = async () => {
+    // Sign out the user and then navigate to landing page
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
   return (
     <div className="w-full h-[71px] bg-white shadow-md flex items-center px-6 z-10">
-      <div className="flex items-center space-x-4">
+      <div 
+        className="flex items-center space-x-4 cursor-pointer" 
+        onClick={handleHeaderClick}
+      >
         <img 
           src="/src/assets/headerLogo.png" 
           alt="Harboard University Logo" 
