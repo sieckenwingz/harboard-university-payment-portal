@@ -11,7 +11,7 @@ const Help = () => {
   const faqItems = [
     {
       question: "How do I pay my tuition fees?",
-      answer: "You can pay your tuition fees through bank transfer, online payment, or at the university cashier's office. Log in to your account, go to Liabilities, select the fee you want to pay, and follow the payment instructions."
+      answer: "You can pay your tuition fees through online payment (GCash) or at the university cashier's office. Log in to your account, go to Liabilities, select the fee you want to pay, and follow the payment instructions."
     },
     {
       question: "I made a payment but it's not showing up in my account. What should I do?",
@@ -37,7 +37,7 @@ const Help = () => {
           Hello {studentName} (SR-Code: {srCode}), how can we help you today?
         </p>
         <p className="text-sm text-blue-600 mt-1">
-          Below you'll find answers to common questions about your payment portal. If you need further assistance, please contact our support team.
+          Below you'll find answers to common questions about Harboard University. If you need further assistance, please contact our support team.
         </p>
       </div>
       

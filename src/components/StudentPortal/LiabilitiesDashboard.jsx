@@ -301,7 +301,6 @@ const LiabilitiesDashboard = () => {
 
       <div className="w-full flex justify-between py-4 mt-6 border-b bg-gray-50 px-4 rounded-t-lg">
         <span style={{ width: "25%" }} className="text-gray-700 font-semibold">FEE NAME</span>
-        <span style={{ width: "20%" }} className="text-gray-700 font-semibold">TYPE</span>
         <span style={{ width: "15%" }} className="text-gray-700 font-semibold">AMOUNT</span>
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">DUE DATE</span>
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">STATUS</span>
@@ -326,7 +325,6 @@ const LiabilitiesDashboard = () => {
                 onClick={() => setSelectedLiability(item)}
               >
                 <span style={{ width: "25%" }} className="text-gray-700 font-medium">{item.feeId.name}</span>
-                <span style={{ width: "20%" }} className="text-gray-700">Membership Fee</span>
                 <span style={{ width: "15%" }} className="text-gray-700">₱{item.feeId.amount / 100}</span>
                 <span style={{ width: "20%" }} className="text-gray-700">{item.paymentId ? (item.paymentId.dueDate != null ? formatDate(item.dueDate) : "No due date")  : "No due date"}</span>
                 <span style={{ width: "20%" }} className="flex items-center">
