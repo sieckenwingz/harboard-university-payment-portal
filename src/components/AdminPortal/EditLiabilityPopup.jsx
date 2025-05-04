@@ -10,11 +10,6 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
   // Initialize form data
   const [formData, setFormData] = useState({
     id: liability?.id || "",
-    name: liability?.name || "",
-    type: liability?.type || "Membership Fee",
-    academicYear: liability?.academicYear || "",
-    period: liability?.period || "",
-    amount: liability?.amount || "",
     dueDate: liability?.dueDate || "",
     collectorName: liability?.collectorName || "",
     gcashNumber: liability?.gcashNumber || "",
@@ -31,6 +26,9 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
   
   // Animation states
   const [formVisible, setFormVisible] = useState(false);
+  
+  // Loading state
+  const [loading, setLoading] = useState(false);
 
   // Click outside handler for modal
   useEffect(() => {
@@ -150,33 +148,28 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
     
+    setLoading(true);
+    
     try {
-      // Prepare the liability data to update
-      // Include all original data but update only the fields we want to change
+      // Extract only the editable fields
       const updatedLiability = {
-        ...liability,
         id: formData.id,
-        name: formData.name,
-        type: formData.type,
-        academicYear: formData.academicYear,
-        period: formData.period,
-        amount: formData.amount,
         dueDate: formData.dueDate,
         collectorName: formData.collectorName,
         gcashNumber: formData.gcashNumber,
-        qrCode: formData.qrCode // This will be the File object if a new QR was uploaded
+        qrCode: formData.qrCode
       };
       
       // Call the parent component's update function
       if (typeof onUpdateLiability === 'function') {
-        onUpdateLiability(updatedLiability);
+        await onUpdateLiability(updatedLiability);
         // Show success modal
         setShowSuccessModal(true);
       } else {
@@ -188,6 +181,8 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
       console.error("Error submitting form:", error);
       setErrorMessage("An error occurred while submitting the form");
       setShowErrorModal(true);
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -326,14 +321,16 @@ const EditLiabilityPopup = ({ liability, organization, onClose, onUpdateLiabilit
             type="button"
             onClick={handleCloseWithAnimation}
             className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+            disabled={loading}
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             className="px-4 py-2 bg-[#a63f42] text-sm text-white rounded-md hover:bg-[#8a3538] transition-colors duration-200"
+            disabled={loading}
           >
-            Save Changes
+            {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

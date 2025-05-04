@@ -7,6 +7,7 @@ interface UseFeesResult {
     fees: Fee[];
     loading: boolean;
     error: Error | null;
+    refetchFees: () => Promise<Fee[]>;
 }
 
 export const useFees = (orgId: number): UseFeesResult => {
@@ -14,32 +15,32 @@ export const useFees = (orgId: number): UseFeesResult => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        const fetchFees = async () => {
-
-            setLoading(true);
-            let all: Fee[] = [];
-            const { data, error } = orgId ? 
-                await supabase
-                    .from('fees')
-                    .select('*, organization_id(*), period_id(*)')
-                    .eq('organization_id', orgId) 
-                : await supabase
-                    .from('fees')
-                    .select('*, organization_id(*), period_id(*)');
-        
-            if (error) {
-                setError(error as Error);
-            } else if (data) {
-                all = data.map((d) => new Fee(d));
-                setFees(all);
-            }
+    const refetchFees = async () => {
+        setLoading(true);
+        let all: Fee[] = [];
+        const { data, error } = orgId ? 
+            await supabase
+                .from('fees')
+                .select('*, organization_id(*), period_id(*)')
+                .eq('organization_id', orgId) 
+            : await supabase
+                .from('fees')
+                .select('*, organization_id(*), period_id(*)');
     
-            setLoading(false);
-        };
+        if (error) {
+            setError(error as Error);
+        } else if (data) {
+            all = data.map((d) => new Fee(d));
+            setFees(all);
+        }
 
-        fetchFees();
-    }, []);
+        setLoading(false);
+        return all;
+    };
+
+    useEffect(() => {
+        refetchFees();
+    }, [orgId]);
   
-    return { fees, loading, error };
+    return { fees, loading, error, refetchFees };
 };

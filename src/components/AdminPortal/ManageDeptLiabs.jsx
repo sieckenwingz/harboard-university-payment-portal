@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Edit, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit, Trash2, CheckCircle } from "lucide-react";
 import AddLiabilityPopup from "./AddLiabilityPopup";
 import EditLiabilityPopup from "./EditLiabilityPopup";
 import { supabase } from "../../App";
@@ -16,11 +16,12 @@ const ManageDeptLiabs = () => {
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [editingLiability, setEditingLiability] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [successModal, setSuccessModal] = useState({ show: false, message: '', action: '' });
   
   // Preserve the organization information from location state
   const organization = location.state?.organization;
   
-  const { fees, loading, error } = useFees(organization.id);
+  const { fees, loading, error, refetchFees } = useFees(organization.id);
   
   const rowsPerPage = 5;
   const totalPages = Math.ceil(fees.length / rowsPerPage);
@@ -28,7 +29,7 @@ const ManageDeptLiabs = () => {
   const currentLiabilities = fees.slice(startIndex, startIndex + rowsPerPage);
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PHP' }).format(amount);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PHP' }).format(amount/100);
   };
 
   const formatDate = (dateString) => {
@@ -47,6 +48,9 @@ const ManageDeptLiabs = () => {
     if (e) e.stopPropagation();
     
     try {
+      // Set loading state
+      setIsLoading(true);
+      
       // Fetch the complete fee record if not already available
       const completeData = await getFeeById(parseInt(liability.id));
       
@@ -54,43 +58,46 @@ const ManageDeptLiabs = () => {
         // Load the complete data into the editing state
         setEditingLiability({
           id: completeData.id.toString(),
-          name: completeData.name,
-          type: completeData.type,
-          academicYear: completeData.academicYear,
-          period: completeData.periodId.toString(),
-          amount: completeData.amount / 100, // Convert from cents to display amount
-          dueDate: completeData.deadline ? completeData.deadline.toISOString().split('T')[0] : '',
-          collector: completeData.collectorName,
+          dueDate: completeData.deadline ? new Date(completeData.deadline).toISOString().split('T')[0] : '',
+          collectorName: completeData.collectorName,
           gcashNumber: completeData.accountNumber,
           qrCode: completeData.qrCode
         });
       } else {
         // Fallback to the provided data if fetching fails
-        setEditingLiability({ ...liability });
+        setEditingLiability({ 
+          id: liability.id,
+          dueDate: liability.deadline ? new Date(liability.deadline).toISOString().split('T')[0] : '',
+          collectorName: liability.collectorName,
+          gcashNumber: liability.accountNumber,
+          qrCode: liability.qrCode
+        });
       }
       
       setShowEditPopup(true);
     } catch (error) {
       console.error("Error fetching complete liability data:", error);
-      // Even if we can't get complete data, still allow editing with available data
-      setEditingLiability({ ...liability });
-      setShowEditPopup(true);
+      // Show an error modal
+      setSuccessModal({ 
+        show: true, 
+        message: "Could not load liability details: " + error.message,
+        action: "error"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
   // Handle updating liability
   const handleUpdateLiability = async (updatedLiabilityData) => {
     try {
-      // Convert the form data to match the expected format in your database
+      setIsLoading(true);
+      
+      // Convert the form data to match the expected format in the database
       const feeUpdates = {
-        name: updatedLiabilityData.name,
-        type: updatedLiabilityData.type,
-        academicYear: updatedLiabilityData.academicYear,
-        amount: Math.round(parseFloat(updatedLiabilityData.amount) * 100), // Convert to cents for database
         deadline: updatedLiabilityData.dueDate, 
-        collectorName: updatedLiabilityData.collector,
-        accountNumber: updatedLiabilityData.gcashNumber,
-        periodId: parseInt(updatedLiabilityData.period) // Make sure period is an integer
+        collectorName: updatedLiabilityData.collectorName,
+        accountNumber: updatedLiabilityData.gcashNumber
       };
   
       // If there's a new QR code file
@@ -105,19 +112,31 @@ const ManageDeptLiabs = () => {
       );
   
       if (success) {
-        // Refresh data from the server
-        fetchLiabilities();
-        
         // Close the popup
         setShowEditPopup(false);
         setEditingLiability(null);
+        
+        // Show success message
+        setSuccessModal({
+          show: true,
+          message: "Liability has been successfully updated.",
+          action: "update"
+        });
+        
+        // Refresh the data
+        await refetchFees();
       } else {
-        console.error("Failed to update liability in the database");
-        alert("Failed to update liability. Please check console for errors.");
+        throw new Error("Failed to update liability in the database");
       }
     } catch (error) {
       console.error("Error updating liability:", error);
-      alert("Error updating liability: " + error.message);
+      setSuccessModal({
+        show: true,
+        message: "Error updating liability: " + error.message,
+        action: "error"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -135,14 +154,19 @@ const ManageDeptLiabs = () => {
     setEditingLiability(null);
   };
   
-  const handleAddLiability = (newLiability) => {
-    // After adding, refresh the data from the database
-    fetchLiabilities();
+  const handleAddLiability = async (newLiability) => {
+    // Close the popup
+    setShowAddPopup(false);
     
-    // Update pagination if needed
-    if ((fees.length + 1) > currentPage * rowsPerPage) {
-      setCurrentPage(Math.ceil((fees.length + 1) / rowsPerPage));
-    }
+    // Show success message
+    setSuccessModal({
+      show: true,
+      message: "Liability successfully added!",
+      action: "add"
+    });
+    
+    // Refresh the data
+    await refetchFees();
   };
   
   // For deleting liability
@@ -152,28 +176,48 @@ const ManageDeptLiabs = () => {
   };
   
   const confirmDeleteLiability = async () => {
+    if (!deleteModal.liability || !deleteModal.liability.id) {
+      console.error("No liability selected for deletion or missing ID");
+      return;
+    }
+  
     try {
-      // Delete from database
-      const success = await deleteFee(parseInt(deleteModal.liability.id));
+      // Store the ID and name of the liability to be deleted
+      const liabilityIdToDelete = parseInt(deleteModal.liability.id);
+      const liabilityName = deleteModal.liability.name || "Selected liability";
       
-      if (success) {
-        // Refresh data from the server
-        fetchLiabilities();
-        
-        // Reset delete modal
-        setDeleteModal({ show: false, liability: null });
-        
-        // Update pagination if needed
-        const remainingItems = fees.length - 1;
-        const newTotalPages = Math.ceil(remainingItems / rowsPerPage);
-        if (currentPage > newTotalPages && currentPage > 1) {
-          setCurrentPage(newTotalPages);
-        }
-      } else {
-        console.error("Failed to delete liability from the database");
+      // Close the modal immediately
+      setDeleteModal({ show: false, liability: null });
+      
+      // Show loading indicator
+      setIsLoading(true);
+      
+      // Perform the database deletion
+      const success = await deleteFee(liabilityIdToDelete);
+      
+      if (!success) {
+        throw new Error("Failed to delete liability from the database");
       }
+      
+      // Show success message
+      setSuccessModal({
+        show: true,
+        message: `"${liabilityName}" has been successfully deleted.`,
+        action: "delete"
+      });
+      
+      // Refresh the data
+      await refetchFees();
+      
     } catch (error) {
       console.error("Error deleting liability:", error);
+      setSuccessModal({
+        show: true,
+        message: "Error deleting liability: " + error.message,
+        action: "error"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -236,7 +280,7 @@ const ManageDeptLiabs = () => {
       </div>
       
       {/* Table Content - Removed LIABILITY NAME column and adjusted grid */}
-      {isLoading ? (
+      {isLoading || loading ? (
         <div className="w-full flex justify-center items-center h-32 py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#a63f42]"></div>
         </div>
@@ -346,7 +390,7 @@ const ManageDeptLiabs = () => {
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Delete Liability</h3>
             
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete "{deleteModal.liability?.name}"?
+              Are you sure you want to delete "{deleteModal.liability?.name || 'this liability'}"?
             </p>
             
             <div className="flex justify-end space-x-3">
@@ -361,6 +405,27 @@ const ManageDeptLiabs = () => {
                 className="px-4 py-2 bg-maroon text-white rounded-md hover:bg-red-700 transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Success/Error Modal */}
+      {successModal.show && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96">
+            <div className="p-4 flex flex-col items-center">
+              <CheckCircle className="h-12 w-12 text-green-500 mb-3" />
+              <h3 className="text-lg font-bold text-gray-800 mb-2">Success!</h3>
+              <p className="text-center text-gray-600 mb-4">
+                {successModal.message}
+              </p>
+              <button
+                onClick={() => setSuccessModal({ show: false, message: '', action: '' })}
+                className="px-4 py-2 bg-[#a63f42] text-white rounded-md hover:bg-[#8a3538] transition-colors duration-200 w-full"
+              >
+                OK
               </button>
             </div>
           </div>

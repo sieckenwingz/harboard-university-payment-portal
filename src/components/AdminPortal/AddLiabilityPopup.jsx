@@ -3,11 +3,11 @@ import { X, Upload, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "../../App";
 
 const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
+  // Form data state
   const [formData, setFormData] = useState({
     organizationId: organization?.id || "",
     periodId: "",
-    academicYear: "",
-    liabilityName: "",
+    academicYear: "2024 - 2025", // Default to current academic year
     amount: "",
     dueDate: "",
     collectorName: "",
@@ -23,6 +23,7 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [formVisible, setFormVisible] = useState(false);
+  const [newLiabilityData, setNewLiabilityData] = useState(null);
   
   // Fetch periods for dropdown
   useEffect(() => {
@@ -57,6 +58,14 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
       const filteredValue = value.replace(/\D/g, '');
       const truncatedValue = filteredValue.slice(0, 11);
       setFormData(prev => ({ ...prev, [name]: truncatedValue }));
+    } else if (name === "amount") {
+      // Allow only numeric values with decimal point
+      const numericalValue = value.replace(/[^\d.]/g, '');
+      // Ensure only one decimal point
+      const parts = numericalValue.split('.');
+      const formattedValue = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
+      
+      setFormData(prev => ({ ...prev, [name]: formattedValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -79,7 +88,6 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     const requiredFields = [
       'periodId', 
       'academicYear', 
-      'liabilityName', 
       'amount', 
       'dueDate', 
       'collectorName', 
@@ -115,14 +123,17 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     setLoading(true);
     
     try {
+      // Generate liability name from organization name
+      const liabilityName = `${organization.name} Membership Fee`;
+      
       // Prepare data for insertion
       const newFee = {
         organization_id: parseInt(formData.organizationId),
         period_id: parseInt(formData.periodId),
-        amount: Math.round(parseFloat(formData.amount)), 
+        amount: Math.round(parseFloat(formData.amount) * 100), // Convert to cents
         deadline: formData.dueDate,
         collector_name: formData.collectorName,
-        name: formData.liabilityName,
+        name: liabilityName,
         liab_type: "Membership Fee", // Set the type to Membership Fee
         acad_year: formData.academicYear,
         account_number: formData.gcashNumber
@@ -154,18 +165,19 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
       // Create object for UI update
       const newLiability = {
         id: data?.[0]?.id || Date.now().toString(),
-        name: formData.liabilityName,
+        name: liabilityName,
         type: "Membership Fee",
         academicYear: formData.academicYear,
-        amount: parseFloat(formData.amount),
+        period: formData.periodId,
+        amount: parseFloat(formData.amount) * 100, // Store as cents
         dueDate: formData.dueDate,
-        collector: formData.collectorName,
+        collectorName: formData.collectorName,
         gcashNumber: formData.gcashNumber,
         qrCode: qrPreview
       };
       
-      // Update UI through callback
-      onAddLiability(newLiability);
+      // Store for use with callback
+      setNewLiabilityData(newLiability);
       
       // Show success message
       setShowSuccessModal(true);
@@ -188,6 +200,10 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     setFormVisible(false);
     setTimeout(() => {
       setShowSuccessModal(false);
+      // Call the parent callback with the new liability data
+      if (typeof onAddLiability === 'function' && newLiabilityData) {
+        onAddLiability(newLiabilityData);
+      }
       onClose();
     }, 300);
   };
@@ -268,13 +284,11 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Amount (PHP) *</label>
                 <div className="relative">
                   <input
-                    type="number"
+                    type="text"
                     name="amount"
                     value={formData.amount}
                     onChange={handleInputChange}
                     required
-                    min="0"
-                    step="0.01"
                     placeholder="0.00"
                     className="w-full pl-8 p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent"
                   />
