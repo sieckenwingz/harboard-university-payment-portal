@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../App";
 import {
@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Loader2
 } from "lucide-react";
 
 const AdminSidebar = () => {
@@ -18,13 +19,63 @@ const AdminSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
-
-  const adminData = {
-    name: "Admin User",
-    position: "System Administrator",
+  
+  // Add state for admin data with loading state
+  const [adminData, setAdminData] = useState({
+    name: "Loading...",
+    position: "Administrator",
     organization: "Student Affairs Office",
-    avatar: "A", 
+    avatar: "A" 
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Toggle user profile modal
+  const toggleUserProfile = () => {
+    setShowUserProfile(!showUserProfile);
   };
+
+  // Fetch admin data on component mount
+  useEffect(() => {
+    async function fetchAdminData() {
+      try {
+        // Get the current authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          console.log("No authenticated user found");
+          setLoading(false);
+          return;
+        }
+        
+        // Get the admin record using the auth user ID
+        const { data, error } = await supabase
+          .from('admins')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching admin data:", error);
+          setLoading(false);
+          return;
+        }
+        
+        if (data) {
+          setAdminData({
+            ...adminData,
+            name: `${data.first_name} ${data.last_name}`,
+            avatar: data.first_name.charAt(0) || "A"
+          });
+        }
+      } catch (error) {
+        console.error("Error in fetchAdminData:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchAdminData();
+  }, []);
 
   const getSelectedPage = () => {
     const path = location.pathname;
@@ -74,13 +125,11 @@ const AdminSidebar = () => {
     setShowLogoutConfirm(true);
   };
 
-  // Updated confirmLogout function from second version
   const confirmLogout = async () => {
     setShowLogoutConfirm(false);
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error("Error signing out:", error.message);
-      // Optionally handle the error (e.g., display an error message)
     }
     // Clear admin flag and redirect to admin login
     localStorage.removeItem("isAdmin");
@@ -91,14 +140,27 @@ const AdminSidebar = () => {
     setShowLogoutConfirm(false);
   };
 
-  const toggleUserProfile = () => {
-    setShowUserProfile(!showUserProfile);
-  };
-
   const sidebarItems = [
     { label: "Liabilities", icon: <LayoutDashboard size={18} /> },
     { label: "Management", icon: <Settings size={18} /> },
   ];
+
+  // Avatar display component with loading state
+  const AvatarDisplay = () => {
+    if (loading) {
+      return (
+        <div className="w-12 h-12 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-lg ring-4 ring-[#a63f42]/20">
+          <Loader2 size={18} className="animate-spin" />
+        </div>
+      );
+    } else {
+      return (
+        <div className="w-12 h-12 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-lg ring-4 ring-[#a63f42]/20">
+          {adminData.avatar}
+        </div>
+      );
+    }
+  };
 
   return (
     <>
@@ -109,9 +171,7 @@ const AdminSidebar = () => {
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center cursor-pointer" onClick={toggleUserProfile}>
-            <div className="w-12 h-12 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-lg ring-4 ring-[#a63f42]/20">
-              {adminData.avatar}
-            </div>
+            <AvatarDisplay />
             {!collapsed && (
               <div className="ml-4 font-semibold">{adminData.name}</div>
             )}
@@ -160,28 +220,6 @@ const AdminSidebar = () => {
         </div>
       </div>
 
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-          <div className="bg-white text-gray-800 shadow-xl rounded-lg p-6 w-[300px]">
-            <p className="text-sm mb-4">Are you sure you want to log out?</p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="text-sm text-gray-500 hover:text-gray-700"
-                onClick={cancelLogout}
-              >
-                Cancel
-              </button>
-              <button
-                className="text-[#a63f42] text-sm font-semibold"
-                onClick={confirmLogout}
-              >
-                Log out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showUserProfile && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
           <div className="bg-white text-gray-800 shadow-xl rounded-lg p-6 w-[400px]">
@@ -196,9 +234,7 @@ const AdminSidebar = () => {
             </div>
 
             <div className="flex items-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-2xl">
-                {adminData.avatar}
-              </div>
+              <AvatarDisplay />
               <div className="ml-4">
                 <h4 className="font-bold text-xl">{adminData.name}</h4>
                 <p className="text-gray-500 text-sm">{adminData.position}</p>
@@ -222,6 +258,28 @@ const AdminSidebar = () => {
                 onClick={toggleUserProfile}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+          <div className="bg-white text-gray-800 shadow-xl rounded-lg p-6 w-[300px]">
+            <p className="text-sm mb-4">Are you sure you want to log out?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="text-sm text-gray-500 hover:text-gray-700"
+                onClick={cancelLogout}
+              >
+                Cancel
+              </button>
+              <button
+                className="text-[#a63f42] text-sm font-semibold"
+                onClick={confirmLogout}
+              >
+                Log out
               </button>
             </div>
           </div>

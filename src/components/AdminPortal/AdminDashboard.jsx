@@ -21,7 +21,11 @@ const AdminDashboard = () => {
   const rowsPerPage = 5;
 
   const handleDropdownChange = (e, filterType) => {
-    if (filterType === "Status") setStatusFilter(e.target.value);
+    if (filterType === "Status") {
+      console.log("Setting status filter to:", e.target.value);
+      setStatusFilter(e.target.value);
+      setCurrentPage(1);
+    }
   };
 
   // Navigate to organization liabilities page
@@ -66,17 +70,28 @@ const navigateToOrganizationLiabilities = (organization) => {
   };
 
   const filteredOrganizations = organizations.filter((item) => {
-    // Filter by verification status (High, Medium, Low)
-    if (statusFilter === "High Priority" && item.pendingVerifications < 20) return false;
-    if (statusFilter === "Medium Priority" && (item.pendingVerifications < 10 || item.pendingVerifications >= 20)) return false;
-    if (statusFilter === "Low Priority" && item.pendingVerifications >= 10) return false;
-    
-    // Filter by search term
-    if (searchTerm &&
-      !item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !item.type.toLowerCase().includes(searchTerm.toLowerCase())) {
+    // Add debugging to see what's happening
+    console.log("Item:", item.name, "Pending:", item.pendingFeeCount, "Filter:", statusFilter);
+
+    // If all orgs have pendingFeeCount < 10, they'd all be "Low Priority"
+    if (statusFilter === "High Priority" && item.pendingFeeCount < 20) {
       return false;
     }
+    
+    if (statusFilter === "Medium Priority" && 
+       (item.pendingFeeCount < 10 || item.pendingFeeCount >= 20)) {
+      return false;
+    }
+    
+    if (statusFilter === "Low Priority" && item.pendingFeeCount >= 10) {
+      return false;
+    }
+    
+    // Search term filter
+    if (searchTerm && !item.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+    
     return true;
   });
 
@@ -116,9 +131,9 @@ const navigateToOrganizationLiabilities = (organization) => {
 
   const getSummary = () => {
     const academic = organizations.length;
-    const highPriority = organizations.filter(item => item.pendingVerifications >= 20).length;
-    const mediumPriority = organizations.filter(item => item.pendingVerifications >= 10 && item.pendingVerifications < 20).length;
-    const lowPriority = organizations.filter(item => item.pendingVerifications < 10).length;
+    const highPriority = organizations.filter(item => item.pendingFeeCount >= 20).length;
+    const mediumPriority = organizations.filter(item => item.pendingFeeCount >= 10 && item.pendingFeeCount < 20).length;
+    const lowPriority = organizations.filter(item => item.pendingFeeCount < 10).length;
     
     return { academic, highPriority, mediumPriority, lowPriority };
   };
@@ -192,20 +207,20 @@ const navigateToOrganizationLiabilities = (organization) => {
 
       <div className="w-full flex items-center mt-6 gap-6 flex-wrap">
         <div className="flex gap-2 items-center">
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(e) => handleDropdownChange(e, "Status")}
-              className="pl-8 pr-6 py-2 border rounded-md text-gray-700 w-auto appearance-none focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
+        <div className="relative">
+          <select
+            value={statusFilter}
+            onChange={(e) => handleDropdownChange(e, "Status")}
+            className="pl-8 pr-6 py-2 border rounded-md text-gray-700 w-auto appearance-none focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
             >
-              <option>Status</option>
-              <option>High Priority</option>
-              <option>Medium Priority</option>
+            <option>Status</option>
+            <option>High Priority</option>
+            <option>Medium Priority</option>
               <option>Low Priority</option>
-            </select>
-            <Filter className="absolute left-2 top-2.5 text-gray-500" size={18} />
-            <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />
-          </div>
+          </select>
+          <Filter className="absolute left-2 top-2.5 text-gray-500" size={18} />
+          <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />
+        </div>
         </div>
 
         <div className="relative flex-grow">
@@ -237,7 +252,7 @@ const navigateToOrganizationLiabilities = (organization) => {
       ) : (
         <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
           {currentOrganizations.map((item) => {
-            const priorityStyle = getPriorityStyle(item.pendingVerifications);
+            const priorityStyle = getPriorityStyle(item.pendingFeeCount);
             return (
               <div
                 key={item.id}
