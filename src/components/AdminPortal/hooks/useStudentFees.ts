@@ -9,6 +9,7 @@ interface UseStudentFeesResult {
     pendingStudentFees: StudentFee[];
     verifiedStudentFees: StudentFee[];
     rejectedStudentFees: StudentFee[];
+    unpaidStudentFees: StudentFee[];
     loading: boolean;
     error: Error | null;
 }
@@ -18,6 +19,7 @@ export const useStudentFees = (feeId: string | null, orgIds: number[] | null): U
     const [pendingStudentFees, setPendingStudentFees] = useState<StudentFee[]>([]);
     const [verifiedStudentFees, setVerifiedStudentFees] = useState<StudentFee[]>([]);
     const [rejectedStudentFees, setRejectedStudentFees] = useState<StudentFee[]>([]);
+    const [unpaidStudentFees, setUnpaidStudentFees] = useState<StudentFee[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
   
@@ -54,6 +56,7 @@ export const useStudentFees = (feeId: string | null, orgIds: number[] | null): U
         setPendingStudentFees(allStudentFees.filter((fee) => fee.status == Status.UNDER_REVIEW));
         setVerifiedStudentFees(allStudentFees.filter((fee) => fee.status == Status.PAID));
         setRejectedStudentFees(allStudentFees.filter((fee) => fee.status == Status.REJECTED));
+        setUnpaidStudentFees(allStudentFees.filter((fee) => fee.paymentId == null));
     }, [allStudentFees]);
 
     useEffect(() => {
@@ -87,5 +90,5 @@ export const useStudentFees = (feeId: string | null, orgIds: number[] | null): U
         };
     }, [feeId]);
   
-    return { allStudentFees, pendingStudentFees, verifiedStudentFees, rejectedStudentFees, loading, error };
+    return { allStudentFees, pendingStudentFees, verifiedStudentFees, rejectedStudentFees, unpaidStudentFees, loading, error };
 };

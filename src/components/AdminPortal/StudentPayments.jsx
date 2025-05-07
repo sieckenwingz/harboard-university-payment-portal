@@ -51,7 +51,7 @@ const StudentPayments = () => {
     showUnmatched: true
   });
 
-  const { allStudentFees, pendingStudentFees, verifiedStudentFees, rejectedStudentFees, loading, error } = useStudentFees(feeId);
+  const { allStudentFees, pendingStudentFees, verifiedStudentFees, rejectedStudentFees, unpaidStudentFees, loading, error } = useStudentFees(feeId);
   const { confirmFee } = useConfirmFee();
   const { rejectFee } = useRejectFee();
   
@@ -373,8 +373,10 @@ STARTING BALANCE 4127.18
       activeData = pendingStudentFees;
     } else if (activeTab === "verified") {
       activeData = verifiedStudentFees;
-    } else {
+    } else if (activeTab === "rejected") {
       activeData = rejectedStudentFees;
+    } else {
+      activeData = unpaidStudentFees;
     }
     
     return activeData.filter((student) => {
@@ -433,7 +435,7 @@ STARTING BALANCE 4127.18
             {liability?.name} - Student Payments
           </h1>
           <p className="text-gray-600 mt-1">
-            {pendingStudentFees.length} pending, {verifiedStudentFees.length} verified, {rejectedStudentFees.length} rejected
+            {pendingStudentFees.length} pending, {verifiedStudentFees.length} verified, {rejectedStudentFees.length} rejected, {unpaidStudentFees.length} unpaid
           </p>
         </div>
       </div>
@@ -554,6 +556,14 @@ STARTING BALANCE 4127.18
         >
             Rejected Payments
         </button>
+        <button
+            className={`px-4 py-2 ${activeTab === "unpaid" 
+            ? "text-[#a63f42] border-b-2 border-[#a63f42] font-semibold" 
+            : "text-gray-500 hover:text-gray-700 font-medium"}`}
+            onClick={() => handleTabChange("unpaid")}
+        >
+            Unpaid
+        </button>
         </div>
 
       {/* Table Headers based on active tab */}
@@ -590,6 +600,15 @@ STARTING BALANCE 4127.18
             <span style={{ width: "30%" }} className="text-gray-700 font-semibold">REFERENCE NO.</span>
             <span style={{ width: "30%" }} className="text-gray-700 font-semibold">REJECTED DATE</span>
             <span style={{ width: "15%" }} className="text-gray-700 font-semibold">ACTION</span>
+          </>
+        )}
+
+        {/* Unpaid Tab Headers */}
+        {activeTab === "unpaid" && (
+          <>
+            <span style={{ width: "30%" }} className="text-gray-700 font-semibold">STUDENT NAME</span>
+            <span style={{ width: "30%" }} className="text-gray-700 font-semibold">AMOUNT</span>
+            <span style={{ width: "30%" }} className="text-gray-700 font-semibold">DATE TAGGED</span>
           </>
         )}
       </div>
@@ -699,6 +718,18 @@ STARTING BALANCE 4127.18
                       <Eye size={18} />
                     </button>
                   </span>
+                </>
+              )}
+              
+              {/* Unpaid Tab Row */}
+              {activeTab === "unpaid" && (
+                <>
+                  <div style={{ width: "30%" }} className="text-gray-700">
+                    <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.getFullName()}</span>
+                    <div className="text-xs text-gray-500">{studentFee.studentId.srCode}</div>
+                  </div>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatAmount(studentFee.feeId?.amount)}</span>
+                  <span style={{ width: "30%" }} className="text-gray-600">{formatDate(studentFee.createdAt)}</span>
                 </>
               )}
             </div>
