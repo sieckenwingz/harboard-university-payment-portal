@@ -23,10 +23,10 @@ export class Fee {
         this.id = data.id ?? 0;
         this.createdAt = new Date(data.created_at);
         this.amount = data.amount;
-        this.deadline = data.payment_date ? new Date(data.payment_date) : null;
+        this.deadline = data.deadline ? new Date(data.deadline) : null;
         this.name = data.name;
-        this.organizationId = typeof data['organization_id'] === 'number' ? data['organization_id'] : new Organization(data['organization_id']);;
-        this.periodId = data.periodId instanceof Map ? data.periodId['id'] : data.periodId;
+        this.organizationId = typeof data['organization_id'] === 'number' ? data['organization_id'] : new Organization(data['organization_id']);
+        this.periodId = typeof data.period_id === 'number' ? data.period_id : new Period(data.period_id);
         this.collectorName = data.collector_name;
         this.accountNumber = data.account_number;
         this.qrCode = data.qr_code;

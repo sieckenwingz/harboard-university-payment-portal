@@ -298,8 +298,8 @@ const ManageDeptLiabs = () => {
               key={liability.id}
               className="w-full grid grid-cols-6 py-4 px-4 border-b hover:bg-gray-50"
             >
-              <span className="text-gray-700">{liability.academicYear}</span>
-              <span className="text-gray-700">{getSemesterLabel(liability.periodId)}</span>
+              <span className="text-gray-700">{liability.periodId?.year}</span>
+              <span className="text-gray-700">{liability.periodId?.semester}</span>
               <span className="text-gray-700">{formatCurrency(liability.amount)}</span>
               <span className="text-gray-700">{formatDate(liability.deadline)}</span>
               <span className="text-gray-700">{liability.collectorName}</span>
