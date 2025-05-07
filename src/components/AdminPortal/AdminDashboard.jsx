@@ -29,26 +29,9 @@ const AdminDashboard = () => {
   };
 
   // Navigate to organization liabilities page
-  // In AdminDashboard.jsx
-const navigateToOrganizationLiabilities = (organization) => {
-  // Navigate directly to the student payments view
-  // This assumes you have a default liability ID to use or can get the first one
-  
-  // Get the first liability ID from the organization if available
-  // If not, we'll need to make this a route parameter that can be handled by StudentPayments
-  const firstLiabilityId = organization.liabilityIds?.[0] || "default";
-  
-  // Navigate directly to student payments
-  navigate(`/organizations/${organization.id}/liabilities/${firstLiabilityId}`, {
-    state: { 
-      organization: organization,
-      liability: {
-        id: firstLiabilityId,
-        name: organization.name, // Use org name as default liability name
-      }
-    }
-  });
-};
+  const navigateToOrganizationLiabilities = (organization) => {
+    navigate(`/organization-liabilities/${organization.id}`, { state: { organization } });
+  };
 
   // Open popup with organization details
   const openOrganizationPopup = (organization, e) => {
@@ -266,7 +249,7 @@ const navigateToOrganizationLiabilities = (organization) => {
                   style={{ color: priorityStyle.color }}
                   >
                   {priorityStyle.icon}
-                  {item.unpaidStudentCount} unpaid students
+                  {item.pendingFeeCount} unpaid students
                 </span>
                 </span>
                 <span style={{ width: "20%" }}>
