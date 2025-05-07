@@ -164,48 +164,75 @@ const AdminSidebar = () => {
 
   return (
     <>
+      {/* Fixed sidebar container */}
       <div
-        className={`h-screen transition-all duration-300 ${
+        className={`fixed top-[71px] left-0 bottom-0 transition-all duration-300 ${
           collapsed ? "w-[80px]" : "w-[250px]"
-        } bg-white text-gray-800 shadow-xl p-4 overflow-y-auto relative`}
+        } bg-white text-gray-800 shadow-xl z-10 flex flex-col`}
       >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center cursor-pointer" onClick={toggleUserProfile}>
-            <AvatarDisplay />
-            {!collapsed && (
-              <div className="ml-4 font-semibold">{adminData.name}</div>
-            )}
+        {/* Top sidebar content - scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 relative">
+          {/* avatar + name (clickable to open profile modal) */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center cursor-pointer" onClick={toggleUserProfile}>
+              <AvatarDisplay />
+              {!collapsed && (
+                <div className="ml-4 font-semibold">{adminData.name}</div>
+              )}
+            </div>
+          </div>
+
+          {/* toggle sidebar button */}
+          <button
+            className="absolute top-24 right-0 transform bg-white border border-gray-200 rounded-l-full w-6 h-12 shadow-md hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42] z-10 flex items-center justify-center"
+            onClick={() => setCollapsed(!collapsed)}
+            title="Toggle sidebar"
+          >
+            {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+
+          {/* main navigation items */}
+          <div className="flex flex-col gap-1">
+            {sidebarItems.map(({ label, icon }) => (
+              <div
+                key={label}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200
+                  ${collapsed ? "justify-center" : ""}
+                  ${
+                    selectedPage === label
+                      ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
+                      : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
+                  }`}
+                onClick={() => handleSidebarClick(label)}
+              >
+                <div className="w-[18px] flex justify-center">{icon}</div>
+                {!collapsed && <span>{label}</span>}
+              </div>
+            ))}
           </div>
         </div>
 
-        <button
-          className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-white border border-gray-200 rounded-l-full w-6 h-12 shadow-md hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42] z-10 flex items-center justify-center"
-          onClick={() => setCollapsed(!collapsed)}
-          title="Toggle sidebar"
-        >
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
-
-        <div className="flex flex-col gap-1">
-          {sidebarItems.map(({ label, icon }) => (
-            <div
-              key={label}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200
-                ${collapsed ? "justify-center" : ""}
-                ${
-                  selectedPage === label
-                    ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
-                    : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
-                }`}
-              onClick={() => handleSidebarClick(label)}
-            >
-              <div className="w-[18px] flex justify-center">{icon}</div>
-              {!collapsed && <span>{label}</span>}
+        {/* Bottom Section with Help & Logout - fixed at bottom */}
+        <div className="p-4 border-t border-gray-100">
+          {/* Help Navigation - if needed */}
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
+              collapsed ? "justify-center" : ""
+            }
+            ${
+              selectedPage === "Help"
+                ? "bg-[#f7f6ff] text-[#a63f42] font-semibold border-l-4 border-[#a63f42]"
+                : "hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42]"
+            }`}
+            onClick={() => handleSidebarClick("Help")}
+          >
+            <div className="w-[18px] flex justify-center">
+              <HelpCircle size={18} />
             </div>
-          ))}
-        </div>
+            {!collapsed && <span>Help</span>}
+          </div>
 
-        <div className="absolute bottom-20 left-4 right-4">
+          {/* Logout Button */}
           <div
             className={`flex items-center gap-3 px-4 py-3 mt-2 rounded-lg cursor-pointer transition-all duration-200 ${
               collapsed ? "justify-center" : ""
@@ -220,6 +247,10 @@ const AdminSidebar = () => {
         </div>
       </div>
 
+      {/* Content margin spacer */}
+      <div className={`${collapsed ? "w-[80px]" : "w-[250px]"} flex-shrink-0 transition-all duration-300`}></div>
+
+      {/* Student Profile Modal */}
       {showUserProfile && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
           <div className="bg-white text-gray-800 shadow-xl rounded-lg p-6 w-[400px]">
@@ -264,6 +295,7 @@ const AdminSidebar = () => {
         </div>
       )}
 
+      {/* Logout Confirmation Popup */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
           <div className="bg-white text-gray-800 shadow-xl rounded-lg p-6 w-[300px]">

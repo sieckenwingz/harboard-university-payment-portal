@@ -1,3 +1,4 @@
+// components/AdminPortal/AdminHeader.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../App";
