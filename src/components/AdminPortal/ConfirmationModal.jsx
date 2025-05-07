@@ -88,6 +88,50 @@ const ConfirmationModal = ({ type, isExiting, onClose }) => {
               </svg>
             </motion.div>
           </>
+        ) : type === 'bulk_confirm' ? (
+          <>
+            <div className="absolute top-[136px] left-0 right-0 text-center text-[#15aa07] text-xl font-semibold">
+              Payments Confirmed!
+            </div>
+            <div className="absolute top-[165px] left-0 right-0 text-center text-[15px] font-normal">
+              Matched payment has been successfully verified.<br />
+              Students will be notified of this update.
+            </div>
+            <motion.div
+              className="absolute top-[59px] left-[173px] w-[72px] h-[72px] flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <motion.circle
+                  cx="36"
+                  cy="36"
+                  r="30"
+                  stroke="#15aa07"
+                  strokeWidth="4"
+                  fill="none"
+                  variants={circleAnimation}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                />
+                <motion.path
+                  d="M24 36l8 8L48 28"
+                  stroke="#15aa07"
+                  strokeWidth="4"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  variants={checkIconAnimation}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                />
+              </svg>
+            </motion.div>
+          </>
         ) : (
           <>
             <div className="absolute top-[136px] left-0 right-0 text-center text-[#e53935] text-xl font-semibold">

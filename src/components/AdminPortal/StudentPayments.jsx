@@ -23,6 +23,9 @@ import ConfirmationModal from "./ConfirmationModal";
 import { useStudentFees } from "./hooks/useStudentFees";
 import { useConfirmFee } from "./hooks/verification/useConfirmFee";
 import { useRejectFee } from "./hooks/verification/useRejectFee";
+import pdfToText from "react-pdftotext";
+import { checkTransactionDetails, extractGcashTransactions } from "../../TransactionUtils";
+import { useBulkConfirmFee } from "./hooks/verification/useBulkConfirmFee";
 
 const StudentPayments = () => {
   const { organizationId, liabilityId: feeId } = useParams();
@@ -54,32 +57,8 @@ const StudentPayments = () => {
   const { allStudentFees, pendingStudentFees, verifiedStudentFees, rejectedStudentFees, unpaidStudentFees, loading, error } = useStudentFees(feeId);
   const { confirmFee } = useConfirmFee();
   const { rejectFee } = useRejectFee();
-  
-  // In StudentPayments.jsx
-useEffect(() => {
-  const fetchLiabilityData = async () => {
-    // If we don't have liability info from navigation state, fetch it
-    if (!liability || !liability.name) {
-      try {
-        // Fetch liability details from the API
-        const { data, error } = await supabase
-          .from('fees')
-          .select('*')
-          .eq('id', feeId)
-          .single();
-          
-        if (data) {
-          // Update the local liability state
-          setLiability(data);
-        }
-      } catch (error) {
-        console.error("Error fetching liability details:", error);
-      }
-    }
-  };
-  
-  fetchLiabilityData();
-}, []);
+
+  const { bulkConfirmFee } = useBulkConfirmFee();
 
   const rowsPerPage = 5;
 
@@ -123,41 +102,6 @@ useEffect(() => {
     }
   };
 
-  const processPaymentAction = () => {
-    // get the student from pending list
-    // const student = students.find(s => s.id === confirmationModal.studentId);
-    
-    // if (confirmationModal.type === 'confirm' && student) {
-    //   // add to verified students
-    //   const verifiedStudent = {
-    //     ...student,
-    //     status: "verified",
-    //     verifiedDate: new Date().toISOString().split('T')[0],
-    //     verifiedBy: "Admin User"
-    //   };
-    // } else if (confirmationModal.type === 'reject' && student) {
-    //   // add to rejected students
-    //   const rejectedStudent = {
-    //     ...student,
-    //     status: "rejected",
-    //     rejectedDate: new Date().toISOString().split('T')[0],
-    //     rejectedBy: "Admin User",
-    //     rejectionReason: "Payment verification failed"
-    //   };
-    // }
-    
-    // // remove from pending students
-    // setStudents(prevStudents => 
-    //   prevStudents.filter(s => s.id !== confirmationModal.studentId)
-    // );
-    
-    setIsExiting(true);
-    setTimeout(() => {
-      setIsExiting(false);
-      setConfirmationModal({ show: false, type: null, studentId: null });
-    }, 500);
-  };
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
@@ -168,107 +112,30 @@ useEffect(() => {
     fileInputRef.current.click();
   };
 
-  const parseGCashTransactionHistory = (text) => {
-    const lines = text.split('\n');
-    const transactions = [];
-    
-    let startIndex = 0;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes('Date and Time') && 
-          lines[i].includes('Description') && 
-          lines[i].includes('Reference No.')) {
-        startIndex = i + 2; 
-        break;
-      }
-    }
-    
-    for (let i = startIndex; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      if (!line || line === "" || line.startsWith("ENDING BALANCE") || line.startsWith("Total")) {
-        continue;
-      }
-      
-      // extract reference number (10+ digit number)
-      const refNoMatch = line.match(/\d{10,}/);
-      if (!refNoMatch) continue;
-      
-      const referenceNo = refNoMatch[0];
-      
-      // extract date 
-      const dateMatch = line.match(/\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+[AP]M/);
-      const date = dateMatch ? dateMatch[0] : "Unknown Date";
-      
-      // extract description
-      let descriptionStart = line.indexOf(date) + date.length;
-      let descriptionEnd = line.indexOf(referenceNo);
-      let description = "Unknown";
-      
-      if (descriptionStart > 0 && descriptionEnd > descriptionStart) {
-        description = line.substring(descriptionStart, descriptionEnd).trim();
-      }
-      
-      // extract amount 
-      const amountMatches = line.substring(descriptionEnd + referenceNo.length).match(/\d+\.\d{2}/g);
-      let amount = 0;
-      
-      if (amountMatches && amountMatches.length > 0) {
-        amount = parseFloat(amountMatches[0]);
-      }
-      
-      transactions.push({
-        date,
-        description,
-        referenceNo,
-        amount
-      });
-    }
-    
-    return transactions;
-  };
+  const handlePdfData = (text) => {
+    const transactions = extractGcashTransactions(text);
 
-  const matchPaymentsWithTransactions = (students, transactions) => {
-    const results = {
-      matched: [],
-      unmatched: []
-    };
+    // For more efficient searching using refNo
+    const refNoIndexed = Object.fromEntries(transactions.map(trans => [trans.refNo, trans]));
     
-    students.forEach(student => {
-      // Try to find a matching transaction by reference number
-      const matchingTransaction = transactions.find(
-        transaction => transaction.referenceNo === student.referenceNo
-      );
-      
-      if (matchingTransaction) {
-        // Check if amount matches approximately (allow small differences)
-        const amountDifference = Math.abs(matchingTransaction.amount - student.amountPaid);
-        const amountMatches = amountDifference < 1; 
-        
-        if (amountMatches) {
-          results.matched.push({
-            ...student,
-            transactionVerified: true,
-            verificationMethod: 'automatic',
-            matchingTransaction
-          });
-        } else {
-          results.unmatched.push({
-            ...student,
-            transactionVerified: false,
-            verificationIssue: 'amount_mismatch',
-            matchingTransaction
-          });
+    const matched = [];
+    for (const s of pendingStudentFees) {
+      const transactionFound = refNoIndexed[s.paymentId.refNo];
+      if (transactionFound) {
+        const transactionValid = checkTransactionDetails(transactionFound, s.paymentId);
+        if (transactionValid) {
+          matched.push({'studentFee': s, 'transaction': transactionFound});
         }
-      } else {
-        results.unmatched.push({
-          ...student,
-          transactionVerified: false,
-          verificationIssue: 'no_matching_transaction'
-        });
       }
+    }
+  
+    setParseResults({
+      matched: matched,
+      unmatched: [],
+      gcashHistory: transactions
     });
-    
-    return results;
+
+    setIsParsing(false);
   };
 
   const handleFileUpload = async (e) => {
@@ -277,93 +144,17 @@ useEffect(() => {
     
     // reset file input value to allow re-uploading the same file
     e.target.value = "";
-    
+
     setIsParsing(true);
     setShowOCRModal(true);
-    
-    //sample lang
-    // use OCR to extract text from the PDF
-    setTimeout(() => {
-      // the OCR result in a real app
-      // hardcoded sample of the transaction history
-      const mockOCRText = `GCash Transaction History
-2024-02-01 to 2024-04-13
-Date and Time Description Reference No. Debit Credit Balance
-STARTING BALANCE 4127.18
-2024-02-02 09:17 AM Buy Load Transaction for 09918826932 0000258854628 100.00 4027.18
-2024-02-06 08:36 AM Payment to Foodpanda, Merchant Transaction Number: a5cl-kikh 0000264659411 291.00 3736.18
-2024-02-06 09:21 AM Bills Payment to PLDT 0000264875622 1407.00 2329.18
-2024-02-07 12:09 PM Buy Load Transaction for 09927054605 0000266567336 99.00 2230.18
-2024-02-08 07:02 PM Payment to Foodpanda, Merchant Transaction Number: b5um-sedc 0000268562903 666.00 1564.18
-2024-02-10 10:21 AM Payment to ePrime Business Solutions, Inc 0000971686991 134.69 1429.49
-2024-02-16 03:07 PM Payment to Foodpanda, Merchant Transaction Number: e6mi-srnc 0000280325919 283.00 1146.49
-2024-02-19 10:58 PM Transfer from 09927054605 to 09266126305 7015388757390 85.00 1231.49
-2024-02-21 07:03 AM Payment to BAYAD - MERALCO ONLINE 0000787062739 550.28 681.21
-2024-03-01 01:10 PM Transfer from 09752361784 to 09266126305 5015639053132 2000.00 2639.21
-2024-03-01 02:24 PM Payment to Foodpanda, Merchant Transaction Number: a5cl-tjya 0000201599770 269.00 2370.21
-2024-03-03 11:40 AM Buy Load Transaction for 09918826932 0000204849333 100.00 2270.21
-2024-03-05 09:45 AM Payment to Shopee Philippines Inc 0000908872717 170.00 2100.21
-2024-03-05 09:50 AM Payment to ShopeePay 0000508781961 306.00 1794.21
-2024-03-06 09:37 AM Payment to ePrime Business Solutions, Inc 0000510416031 136.61 1657.60
-2024-03-07 09:30 AM Payment to ADVANCED PLUS TECHNOLOGIES PTE.LTD. 0000211192274 172.00 1485.60
-2024-03-07 09:33 AM Payment to Foodpanda, Merchant Transaction Number: a5cl-dvm9 0000211147677 48.00 1437.60
-2024-03-15 08:28 PM Payment to Shopee Philippines Inc 0000225086095 175.00 912.09
-2024-03-17 09:21 AM Payment to TikTok Shop 0000026980425 475.00 115.56`;
-      
-      // process the OCR text
-      const transactions = parseGCashTransactionHistory(mockOCRText);
-      const matchResults = matchPaymentsWithTransactions(students, transactions);
-      
-      setParseResults({
-        matched: matchResults.matched,
-        unmatched: matchResults.unmatched,
-        gcashHistory: transactions
-      });
-      
-      setIsParsing(false);
-    }, 2000);
-  };
-
-  const handleVerifyAllMatched = () => {
-    // process all matched transactions
-    const matchedIds = parseResults.matched.map(student => student.id);
-    
-    // move all matched students to verified
-    const newVerifiedStudents = parseResults.matched.map(student => ({
-      ...student,
-      status: "verified",
-      verifiedDate: new Date().toISOString().split('T')[0],
-      verifiedBy: "Admin User (Bulk Verification)",
-      verificationMethod: "automatic-ocr"
-    }));
-    
-    setVerifiedStudents(prev => [...prev, ...newVerifiedStudents]);
-    setStudents(prev => prev.filter(student => !matchedIds.includes(student.id)));
-    
-    // close OCR modal
-    setShowOCRModal(false);
-  };
-
-  const handleRejectAllUnmatched = () => {
-    // process all unmatched transactions
-    const unmatchedIds = parseResults.unmatched.map(student => student.id);
-    
-    // move all unmatched students to rejected
-    const newRejectedStudents = parseResults.unmatched.map(student => ({
-      ...student,
-      status: "rejected",
-      rejectedDate: new Date().toISOString().split('T')[0],
-      rejectedBy: "Admin User (Bulk Rejection)",
-      rejectionReason: student.verificationIssue === 'amount_mismatch' 
-        ? "Amount mismatch with GCash transaction" 
-        : "No matching transaction found"
-    }));
-    
-    setRejectedStudents(prev => [...prev, ...newRejectedStudents]);
-    setStudents(prev => prev.filter(student => !unmatchedIds.includes(student.id)));
-    
-    // close OCR modal
-    setShowOCRModal(false);
+    pdfToText(file)
+      .then(text => handlePdfData(text))
+      .catch(error => {
+        console.error("Failed to extract text from pdf");
+        setShowOCRModal(false);
+        setIsParsing(false);
+        alert('Error while extracting transaction info')
+      })
   };
 
   const getFilteredData = () => {
@@ -413,12 +204,28 @@ STARTING BALANCE 4127.18
       style: 'currency',
       currency: 'PHP',
       minimumFractionDigits: 2
-    }).format(amount);
+    }).format(amount / 100);
   };
 
   const isStudentMatched = (studentId) => {
-    return parseResults.matched.some(student => student.id === studentId);
+    return parseResults.matched.some(matchResult => matchResult.studentFee.studentId.id === studentId);
   };
+
+  const onVerifyAllMatched = async (e) => {
+    if (e) e.stopPropagation();
+    const paymentIds = parseResults.matched.map((matchResult) => matchResult.studentFee.paymentId.id);
+    const { _, error: err } = await bulkConfirmFee(paymentIds);
+    setShowPaymentModal(false);
+    if (!err) {
+      setConfirmationModal({
+        show: true,
+        type: 'bulk_confirm',
+        studentId: ''
+      })
+    } else {
+      console.log('bulk confirm error')
+    }
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -458,18 +265,21 @@ STARTING BALANCE 4127.18
             <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
           </div>
           
-          <button
-            onClick={handleUploadClick}
-            className="flex items-center px-4 py-2 bg-[#a63f42] text-white rounded-md hover:bg-[#8a3538] transition-colors"
-          >
-            <Upload size={16} className="mr-2" />
-            Upload GCash History
-          </button>
+          {activeTab === 'pending' && 
+            <button
+              disabled={pendingStudentFees.length == 0}
+              onClick={handleUploadClick}
+              className="flex items-center px-4 py-2 bg-[#a63f42] text-white rounded-md hover:bg-[#8a3538] transition-colors"
+            >
+              <Upload size={16} className="mr-2" />
+              Upload GCash History
+            </button>
+}
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileUpload}
-            accept=".pdf"
+            accept="application/pdf"
             className="hidden"
           />
           
@@ -631,7 +441,7 @@ STARTING BALANCE 4127.18
             <div
               key={studentFee.id}
               className={`w-full flex justify-between py-4 px-4 border-b hover:bg-gray-50 ${
-                activeTab === "pending" && isStudentMatched(studentFee.id) ? "bg-green-50" : ""
+                activeTab === "pending" && isStudentMatched(studentFee.studentId.id) ? "bg-green-50" : ""
               }`}
             >
               {/* Pending Tab Row */}
@@ -640,7 +450,7 @@ STARTING BALANCE 4127.18
                   <div style={{ width: "30%" }} className="text-gray-700">
                     <span className="font-medium">{studentFee.studentId.first_name} {studentFee.studentId.getFullName()}</span>
                     <div className="text-xs text-gray-500">{studentFee.studentId.srCode}</div>
-                    {isStudentMatched(studentFee.id) && (
+                    {isStudentMatched(studentFee.studentId.id) && (
                       <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
                         Matched
                       </span>
@@ -814,8 +624,8 @@ STARTING BALANCE 4127.18
           parseResults={parseResults}
           formatAmount={formatAmount}
           onClose={() => setShowOCRModal(false)}
-          onVerifyAllMatched={handleVerifyAllMatched}
-          onRejectAllUnmatched={handleRejectAllUnmatched}
+          onVerifyAllMatched={onVerifyAllMatched}
+          onRejectAllUnmatched={() => {}}
         />
       )}
 
@@ -827,7 +637,8 @@ STARTING BALANCE 4127.18
           onClose={() => {
             setIsExiting(true);
             setTimeout(() => {
-              processPaymentAction();
+              setConfirmationModal({ show: false, type: null, studentId: null });
+              setShowOCRModal(false);
             }, 500);
           }}
         />

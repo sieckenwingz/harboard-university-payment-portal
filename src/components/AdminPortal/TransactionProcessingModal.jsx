@@ -12,6 +12,11 @@ const TransactionProcessingModal = ({
   onVerifyAllMatched,
   onRejectAllUnmatched
 }) => {
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
     <motion.div
       className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
@@ -63,10 +68,6 @@ const TransactionProcessingModal = ({
                   <span className="font-medium text-green-700">Matched Student Payments:</span>
                   <span className="font-medium text-green-700">{parseResults.matched.length}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-maroon">Unmatched Student Payments:</span>
-                  <span className="font-medium text-maroon">{parseResults.unmatched.length}</span>
-                </div>
               </div>
             </div>
             
@@ -94,13 +95,13 @@ const TransactionProcessingModal = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {parseResults.matched.map(student => (
-                        <tr key={student.id} className="border-b border-green-100">
-                          <td className="px-2 py-2 whitespace-nowrap">{student.name}</td>
-                          <td className="px-2 py-2 whitespace-nowrap">{student.srCode}</td>
-                          <td className="px-2 py-2 whitespace-nowrap">{student.referenceNo}</td>
-                          <td className="px-2 py-2 text-left whitespace-nowrap">{formatAmount(student.amountPaid)}</td>
-                          <td className="px-2 py-2 whitespace-nowrap">{student.date}</td>
+                      {parseResults.matched.map(match => (
+                        <tr key={match.studentFee.id} className="border-b border-green-100">
+                          <td className="px-2 py-2 whitespace-nowrap">{match.studentFee.studentId.getFullName()}</td>
+                          <td className="px-2 py-2 whitespace-nowrap">{match.studentFee.studentId.srCode}</td>
+                          <td className="px-2 py-2 whitespace-nowrap">{match.studentFee.paymentId.refNo}</td>
+                          <td className="px-2 py-2 text-left whitespace-nowrap">{formatAmount(match.studentFee.paymentId.amount)}</td>
+                          <td className="px-2 py-2 whitespace-nowrap">{formatDate(match.studentFee.paymentId.paymentDate)}</td>
                         </tr>
                       ))}
                     </tbody>

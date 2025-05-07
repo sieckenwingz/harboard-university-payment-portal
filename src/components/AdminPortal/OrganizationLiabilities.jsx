@@ -71,7 +71,7 @@ const OrganizationLiabilities = () => {
       style: 'currency',
       currency: 'PHP',
       minimumFractionDigits: 2
-    }).format(amount);
+    }).format(amount/100);
   };
 
   const getTotalPendingVerifications = () => {
