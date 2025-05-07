@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// src/components/AdminPortal/AdminSidebar.jsx
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../App";
 import {
@@ -9,12 +10,16 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Loader2
+  Loader2,
+  Camera,
+  Upload
 } from "lucide-react";
+import Avatar from "../common/Avatar"; // Import the Avatar component
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const fileInputRef = useRef(null);
 
   const [collapsed, setCollapsed] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -22,19 +27,24 @@ const AdminSidebar = () => {
   
   // Add state for admin data with loading state
   const [adminData, setAdminData] = useState({
+    id: "",
     name: "Loading...",
     position: "Administrator",
     organization: "Student Affairs Office",
     avatar: "A" 
   });
   const [loading, setLoading] = useState(true);
+  
+  // State for profile image
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Toggle user profile modal
   const toggleUserProfile = () => {
     setShowUserProfile(!showUserProfile);
   };
 
-  // Fetch admin data on component mount
+  // Fetch admin data and profile image on component mount
   useEffect(() => {
     async function fetchAdminData() {
       try {
@@ -50,7 +60,7 @@ const AdminSidebar = () => {
         // Get the admin record using the auth user ID
         const { data, error } = await supabase
           .from('admins')
-          .select('first_name, last_name')
+          .select('id, first_name, last_name')
           .eq('id', user.id)
           .single();
         
@@ -63,9 +73,39 @@ const AdminSidebar = () => {
         if (data) {
           setAdminData({
             ...adminData,
+            id: data.id,
             name: `${data.first_name} ${data.last_name}`,
             avatar: data.first_name.charAt(0) || "A"
           });
+          
+          // Fetch profile image - with more precise matching
+          const { data: files, error: listError } = await supabase
+            .storage
+            .from('profile-images')
+            .list();
+            
+          if (listError) {
+            console.error('Error listing files:', listError);
+            setLoading(false);
+            return;
+          }
+          
+          // Find a file that STARTS WITH the user ID (not just contains)
+          const userFile = files.find(file => 
+            file.name.startsWith(user.id + '_') // Must start with the ID followed by underscore
+          );
+          
+          if (userFile) {
+            // Get the signed URL for the profile image
+            const { data: urlData } = await supabase
+              .storage
+              .from('profile-images')
+              .createSignedUrl(userFile.name, 60 * 60); // 1 hour expiry
+              
+            if (urlData) {
+              setProfileImageUrl(urlData.signedUrl);
+            }
+          }
         }
       } catch (error) {
         console.error("Error in fetchAdminData:", error);
@@ -76,6 +116,72 @@ const AdminSidebar = () => {
     
     fetchAdminData();
   }, []);
+  
+  // Handle image upload
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !adminData.id) return;
+    
+    try {
+      setUploadingImage(true);
+      
+      // First, get the authenticated user
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) {
+        throw new Error('No authenticated user found');
+      }
+      
+      const userId = authData.user.id;
+      
+      // List existing files to remove
+      const { data: existingFiles } = await supabase
+        .storage
+        .from('profile-images')
+        .list();
+      
+      // Remove any existing files with this user's ID
+      if (existingFiles && existingFiles.length > 0) {
+        const userFiles = existingFiles.filter(file => file.name.includes(userId));
+        if (userFiles.length > 0) {
+          await Promise.all(
+            userFiles.map(existingFile => 
+              supabase.storage
+                .from('profile-images')
+                .remove([existingFile.name])
+            )
+          );
+        }
+      }
+      
+      // Create new filename with user ID and name
+      const fileExt = file.name.split('.').pop();
+      // Get first name from adminData.name
+      const firstName = adminData.name.split(' ')[0]?.toLowerCase() || 'admin';
+      const fileName = `${userId}_${firstName}.${fileExt}`;
+      
+      // Upload the new image
+      const { error: uploadError } = await supabase
+        .storage
+        .from('profile-images')
+        .upload(fileName, file);
+      
+      if (uploadError) throw uploadError;
+      
+      // Get the URL of the uploaded image
+      const { data } = await supabase
+        .storage
+        .from('profile-images')
+        .createSignedUrl(fileName, 60 * 60); // 1 hour expiry
+      
+      if (data) {
+        setProfileImageUrl(data.signedUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const getSelectedPage = () => {
     const path = location.pathname;
@@ -145,23 +251,6 @@ const AdminSidebar = () => {
     { label: "Management", icon: <Settings size={18} /> },
   ];
 
-  // Avatar display component with loading state
-  const AvatarDisplay = () => {
-    if (loading) {
-      return (
-        <div className="w-12 h-12 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-lg ring-4 ring-[#a63f42]/20">
-          <Loader2 size={18} className="animate-spin" />
-        </div>
-      );
-    } else {
-      return (
-        <div className="w-12 h-12 rounded-full bg-[#a63f42] text-white font-bold flex justify-center items-center text-lg ring-4 ring-[#a63f42]/20">
-          {adminData.avatar}
-        </div>
-      );
-    }
-  };
-
   return (
     <>
       {/* Fixed sidebar container */}
@@ -175,7 +264,11 @@ const AdminSidebar = () => {
           {/* avatar + name (clickable to open profile modal) */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center cursor-pointer" onClick={toggleUserProfile}>
-              <AvatarDisplay />
+              <Avatar 
+                src={profileImageUrl} 
+                name={adminData.name} 
+                loading={loading} 
+              />
               {!collapsed && (
                 <div className="ml-4 font-semibold">{adminData.name}</div>
               )}
@@ -250,7 +343,7 @@ const AdminSidebar = () => {
       {/* Content margin spacer */}
       <div className={`${collapsed ? "w-[80px]" : "w-[250px]"} flex-shrink-0 transition-all duration-300`}></div>
 
-      {/* Student Profile Modal */}
+      {/* Admin Profile Modal */}
       {showUserProfile && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
           <div className="bg-white text-gray-800 shadow-xl rounded-lg p-6 w-[400px]">
@@ -264,12 +357,39 @@ const AdminSidebar = () => {
               </button>
             </div>
 
-            <div className="flex items-center mb-6">
-              <AvatarDisplay />
-              <div className="ml-4">
-                <h4 className="font-bold text-xl">{adminData.name}</h4>
-                <p className="text-gray-500 text-sm">{adminData.position}</p>
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative group mb-2">
+                <Avatar 
+                  src={profileImageUrl} 
+                  name={adminData.name}
+                  size="lg" 
+                  loading={loading}
+                />
+                <div 
+                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera size={24} className="text-white" />
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                />
+                {uploadingImage && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                    <Loader2 size={24} className="text-white animate-spin" />
+                  </div>
+                )}
               </div>
+              <h4 className="font-bold text-xl mt-2">{adminData.name}</h4>
+              <p className="text-gray-500 text-sm">{adminData.position}</p>
+              <p className="text-sm text-blue-500 cursor-pointer mt-1 flex items-center" onClick={() => fileInputRef.current?.click()}>
+                <Upload size={14} className="mr-1" /> Change Profile Picture
+              </p>
             </div>
 
             <div className="space-y-3">
