@@ -128,7 +128,6 @@ const OrganizationLiabilities = () => {
 
       <div className="w-full flex justify-between py-4 mt-6 border-b bg-gray-50 px-4 rounded-t-lg">
         <span style={{ width: "25%" }} className="text-gray-700 font-semibold">LIABILITY NAME</span>
-        <span style={{ width: "20%" }} className="text-gray-700 font-semibold">CATEGORY</span>
         <span style={{ width: "15%" }} className="text-gray-700 font-semibold">AMOUNT</span>
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">STATUS</span>
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">PAYMENT DUE</span>
@@ -152,7 +151,6 @@ const OrganizationLiabilities = () => {
                 onClick={() => navigateToStudentPayments(item)}
               >
                 <span style={{ width: "25%" }} className="text-gray-700 font-medium">{item.name}</span>
-                <span style={{ width: "20%" }} className="text-gray-600">{item.type}</span>
                 <span style={{ width: "15%" }} className="text-gray-600">{formatAmount(item.amount)}</span>
                 <span style={{ width: "20%" }}>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-orange-100 border border-orange-300 text-orange-700">

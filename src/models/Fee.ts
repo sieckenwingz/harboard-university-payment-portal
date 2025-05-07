@@ -1,13 +1,6 @@
 import { Organization } from "./Organization";
 import { Period } from "./Period";
 
-// Define enums for type safety
-export enum LiabilityType {
-  SCHOOL_FEE = 'School Fee',
-  MEMBERSHIP_FEE = 'Membership Fee',
-  FEE = 'Fee',  // Fallback
-}
-
 export enum AcademicYear {
   YEAR_2023_2024 = '2023 - 2024',
   YEAR_2024_2025 = '2024 - 2025',
@@ -20,7 +13,6 @@ export class Fee {
     amount: number;
     deadline: Date | null;
     name: string;
-    type: LiabilityType;
     academicYear: AcademicYear;
     organizationId: number | Organization;
     periodId: number | Period;
@@ -42,7 +34,6 @@ export class Fee {
         this.name = data.name;
         this.organizationId = typeof data['organization_id'] === 'number' ? data['organization_id'] : new Organization(data['organization_id']);;
         this.periodId = data.periodId instanceof Map ? data.periodId['id'] : data.periodId;
-        this.type = Object.values(LiabilityType).find(v => v === data.liab_type) as LiabilityType | LiabilityType.FEE;
         this.academicYear = Object.values(AcademicYear).find(v => v === data.acad_year) as AcademicYear | AcademicYear.NA;
         this.collectorName = data.collector_name;
         this.accountNumber = data.account_number;
@@ -56,7 +47,6 @@ export class Fee {
         this.amount = 0;
         this.deadline = null;
         this.name = 'Error Fee';
-        this.type = LiabilityType.FEE;
         this.academicYear = AcademicYear.NA;
         this.organizationId = -1;
         this.periodId = -1;
@@ -92,7 +82,6 @@ export class Fee {
             amount: this.amount,
             deadline: this.deadline?.toISOString(),
             liab_name: this.name,
-            liab_type: this.type,
             acad_year: this.academicYear,
             organization_id: typeof this.organizationId === 'object' ? this.organizationId.id : this.organizationId,
             period_id: typeof this.periodId === 'object' ? this.periodId.id : this.periodId,

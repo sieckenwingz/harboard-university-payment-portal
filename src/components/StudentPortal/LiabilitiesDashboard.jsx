@@ -100,7 +100,6 @@ const LiabilitiesDashboard = () => {
     // filter by search term
     if (searchTerm &&
       !item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !item.type.toLowerCase().includes(searchTerm.toLowerCase()) &&
       !item.status.toLowerCase().includes(searchTerm.toLowerCase()) &&
       !item.dueDate.includes(searchTerm) &&
       !item.amount.includes(searchTerm)) {
