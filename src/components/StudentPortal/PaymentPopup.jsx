@@ -22,12 +22,12 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Check if we're in "view" mode or "payment" mode
+  const isViewMode = selectedLiability && selectedLiability.status !== "Unpaid";
 
   /**
-   * TODO: Move (Duplicate from PaymentPopup.jsx)
-   * 
-   * Automatically fetch the receipt signed url everytime the [receiptPath] of
-   * the [selectedLiability] changes.
+   * Fetch QR code URL when the selectedLiability changes
    */
   useEffect(() => {
     async function fetchImage() {
@@ -49,7 +49,7 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
   }, [selectedLiability?.feeId?.qrCode]);
 
   /**
-   * Reset edit field values everytime the [selectedLiability changes].
+   * Reset edit field values everytime the selectedLiability changes
    */
   useEffect(() => {
     setRefNoEdit(selectedLiability?.paymentId?.refNo);
@@ -58,8 +58,7 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
   }, [selectedLiability]);
 
   /**
-   * Automatically fetch the receipt signed url everytime the [receiptPath] of
-   * the [selectedLiability] changes.
+   * Fetch receipt image URL when the selectedLiability changes
    */
   useEffect(() => {
     async function fetchImage() {
@@ -296,7 +295,7 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
         )}
       </AnimatePresence>
 
-      {/* SECOND POPUP - CONFIRM RECEIPT */}
+      {/* SECOND POPUP - CONFIRM RECEIPT or VIEW RECEIPT */}
       <AnimatePresence mode="wait">
         {showSecondPopup && (
           <motion.div
@@ -305,62 +304,33 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
             key="second-popup"
           >
             <motion.div
-              className="w-[754px] h-[483px] relative bg-neutral-50 rounded-[15px] shadow-lg overflow-hidden"
+              className="w-[800px] h-[600px] relative bg-neutral-50 rounded-[15px] shadow-lg overflow-hidden"
               variants={popupAnimation}
               initial="initial"
               animate={isExiting ? "exit" : "animate"}
               exit="exit"
             >
-              {/* Title - properly centered and with spacing from image */}
-              {selectedLiability?.status === "Unpaid" ? (
-                <div className="absolute top-[40px] left-[343px] text-black text-sm font-normal">
-                  Please check if the details are correct.
-                </div>
-              ) : (
-                <div className="absolute top-[80px] left-14 right-0 text-center text-black text-lg font-semibold">
-                  Uploaded Receipt
-                </div>
-              )}
+              {/* Header with title */}
+              <div className="absolute top-[20px] left-0 right-0 px-6">
+                <h2 className="text-lg font-bold">
+                  {isViewMode ? "Payment Receipt" : "Upload Receipt"}
+                </h2>
+              </div>
 
-              {/* Buttons */}
-              {selectedLiability?.status === "Unpaid" ? (
-                <>
-                  <div className="absolute left-[343px] top-[380px] w-[143px] h-[46px] bg-white rounded-lg border border-black/30 overflow-hidden">
-                    <button 
-                      onClick={handleCloseSecondPopup} 
-                      className="w-full h-full flex items-center justify-center text-black text-base font-normal transition-all duration-200 hover:bg-gray-100 hover:shadow-md"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  
-                  <div className="absolute left-[515px] top-[380px] w-[143px] h-[46px] bg-yellow rounded-lg overflow-hidden">
-                    <button 
-                      onClick={handleConfirmReceipt} 
-                      className="w-full h-full flex items-center justify-center text-black text-base font-normal transition-all duration-200 hover:bg-yellow-400 hover:shadow-md"
-                      style={{ transition: "all 0.2s ease" }}
-                    >
-                      Confirm
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="absolute left-[400px] bottom-[90px] w-[143px] h-[46px] bg-white rounded-lg border border-black/30 overflow-hidden">
-                  <button 
-                    onClick={handleCloseSecondPopup} 
-                    className="w-full h-full flex items-center justify-center text-black text-base font-normal transition-all duration-200 hover:bg-gray-100 hover:shadow-md"
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
+              {/* Subtitle - visible and clearly aligned */}
+              <div className="absolute top-[60px] left-0 right-0 px-6 text-black text-base font-medium">
+                {selectedLiability?.status === "Unpaid" 
+                  ? "Please check if the details are correct."
+                  : "Payment Details"
+                }
+              </div>
 
-              {/* Receipt image area */}
-              <div className="absolute left-[90px] top-[55px] w-[217px] h-[368px] rounded-[9px] border border-gray-300 overflow-hidden bg-gray-100 flex items-center justify-center">
+              {/* Receipt image area - larger size for better visibility */}
+              <div className="absolute left-[90px] top-[100px] w-[250px] h-[400px] rounded-[9px] border border-gray-300 overflow-hidden bg-gray-100 flex items-center justify-center">
                 {receiptFile ? (
-                  <img className="w-full h-full object-cover" src={URL.createObjectURL(receiptFile)} alt="Uploaded Receipt" />
+                  <img className="w-full h-full object-contain" src={URL.createObjectURL(receiptFile)} alt="Uploaded Receipt" />
                 ) : receiptUrl ? (
-                  <img className="w-full h-full object-cover" src={receiptUrl} alt="Uploaded Receipt" />
+                  <img className="w-full h-full object-contain" src={receiptUrl} alt="Uploaded Receipt" />
                 ) : (
                   <div className="text-gray-500 text-center p-4">
                     {selectedLiability?.status !== "Unpaid" ? "Receipt Image" : "No receipt uploaded yet"}
@@ -368,22 +338,112 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
                 )}
               </div>
 
-              {/* Account details */}
-            
-
-              <div className="absolute left-[343px] top-[139px] text-black text-base font-semibold">
-                Payment for:<br />Account Name:<br />Account Number:<br />Reference Number:<br />Amount:<br />Date of Payment:
+              {/* Payment Details - GRID LAYOUT with better spacing */}
+              <div className="absolute left-[370px] top-[100px] w-[370px]">
+                <div className="grid grid-cols-[160px_1fr] gap-y-6">
+                  <div className="text-black text-base font-semibold">Payment for:</div>
+                  <div className="text-black text-base font-normal truncate" title={getFeeName()}>
+                    {getFeeName()}
+                  </div>
+                  
+                  <div className="text-black text-base font-semibold">Account Name:</div>
+                  <div className="text-black text-base font-normal truncate" title={selectedLiability?.feeId.collectorName}>
+                    {selectedLiability?.feeId.collectorName}
+                  </div>
+                  
+                  <div className="text-black text-base font-semibold">Account Number:</div>
+                  <div className="text-black text-base font-normal truncate" title={selectedLiability?.feeId.accountNumber}>
+                    {selectedLiability?.feeId.accountNumber}
+                  </div>
+                  
+                  <div className="text-black text-base font-semibold">Reference Number:</div>
+                  <div className="text-black text-base font-normal truncate" title={refNoEdit}>
+                    {refNoEdit}
+                  </div>
+                  
+                  <div className="text-black text-base font-semibold">Amount:</div>
+                  <div className="text-black text-base font-normal truncate" title={formatAmount(amountEdit || selectedLiability?.feeId?.amount)}>
+                    {formatAmount(amountEdit || selectedLiability?.feeId?.amount)}
+                  </div>
+                  
+                  <div className="text-black text-base font-semibold">Date of Payment:</div>
+                  <div className="text-black text-base font-normal">
+                    {formatDate(dateEdit || selectedLiability?.paymentId?.paymentDate)}
+                  </div>
+                  
+                  {isViewMode && selectedLiability.status === "Paid" && (
+                    <>
+                      <div className="text-black text-base font-semibold">Status:</div>
+                      <div className="text-green-600 text-base font-medium">
+                        Verified
+                      </div>
+                      
+                      <div className="text-black text-base font-semibold">Verification Date:</div>
+                      <div className="text-black text-base font-normal">
+                        {formatDate(selectedLiability.paymentId?.statusLastChangedAt)}
+                      </div>
+                    </>
+                  )}
+                  
+                  {isViewMode && selectedLiability.status === "Rejected" && (
+                    <>
+                      <div className="text-black text-base font-semibold">Status:</div>
+                      <div className="text-red-600 text-base font-medium">
+                        Rejected
+                      </div>
+                      
+                      <div className="text-black text-base font-semibold">Reason:</div>
+                      <div className="text-red-600 text-base font-normal">
+                        {selectedLiability.rejectionReason || "Payment verification failed"}
+                      </div>
+                    </>
+                  )}
+                  
+                  {isViewMode && selectedLiability.status === "Under Review" && (
+                    <>
+                      <div className="text-black text-base font-semibold">Status:</div>
+                      <div className="text-orange-600 text-base font-medium">
+                        Under Review
+                      </div>
+                      
+                      <div className="text-black text-base font-semibold">Submitted:</div>
+                      <div className="text-black text-base font-normal">
+                        {formatDate(selectedLiability.paymentId?.createdAt)}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
-              {/* TODO: Make fields editable in case of incorrect OCR values */}
-              <div className="absolute left-[522px] top-[139px] text-black text-base font-normal">
-                {getFeeName()}<br />
-                {selectedLiability?.feeId.collectorName}<br />
-                {selectedLiability?.feeId.accountNumber}<br />
-                {refNoEdit}<br />
-                {formatAmount(amountEdit)}<br />
-                {formatDate(dateEdit)}
-              </div>
+              {/* Buttons */}
+              {selectedLiability?.status === "Unpaid" ? (
+                <div className="absolute bottom-[40px] left-1/2 transform -translate-x-1/2 flex space-x-8">
+                  <button 
+                    onClick={handleCloseSecondPopup} 
+                    className="w-[143px] h-[46px] bg-white rounded-lg border border-black/30 flex items-center justify-center text-black text-base font-normal transition-all duration-200 hover:bg-gray-100 hover:shadow-md"
+                  >
+                    Cancel
+                  </button>
+                  
+                  <button 
+                    onClick={handleConfirmReceipt} 
+                    className="w-[143px] h-[46px] bg-yellow rounded-lg flex items-center justify-center text-black text-base font-normal transition-all duration-200 hover:bg-yellow-400 hover:shadow-md"
+                    style={{ transition: "all 0.2s ease" }}
+                    disabled={loading}
+                  >
+                    {loading ? 'Processing...' : 'Confirm'}
+                  </button>
+                </div>
+              ) : (
+                <div className="absolute bottom-[40px] left-1/2 transform -translate-x-1/2">
+                  <button 
+                    onClick={handleCloseSecondPopup} 
+                    className="w-[143px] h-[46px] bg-white rounded-lg border border-black/30 flex items-center justify-center text-black text-base font-normal transition-all duration-200 hover:bg-gray-100 hover:shadow-md"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -468,19 +528,6 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
         )}
       </AnimatePresence>
     </>
-  );
-};
-
-//  to support fee name searching
-const searchLiabilities = (liabilities, searchTerm) => {
-  if (!searchTerm) return liabilities;
-  
-  searchTerm = searchTerm.toLowerCase();
-  return liabilities.filter(liability => 
-    liability.feeName?.toLowerCase().includes(searchTerm) || 
-    liability.name?.toLowerCase().includes(searchTerm) || // In case fee name is stored in 'name' property
-    liability.accountName?.toLowerCase().includes(searchTerm) ||
-    liability.accountNumber?.toLowerCase().includes(searchTerm)
   );
 };
 
