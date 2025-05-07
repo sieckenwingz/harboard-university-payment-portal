@@ -1,15 +1,20 @@
 // components/StudentPortal/Header.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../../App";
 
 const Header = () => {
-  const navigate = useNavigate();
-
   const handleHeaderClick = async () => {
-    // Sign out the user and then navigate to landing page
-    await supabase.auth.signOut();
-    navigate("/");
+    try {
+      // Sign out the user
+      await supabase.auth.signOut();
+      
+      // Force a complete page reload and redirect to student login
+      window.location.href = "/student-login";
+    } catch (error) {
+      console.error("Error during header logout:", error);
+      // Fallback in case of error
+      window.location.href = "/student-login";
+    }
   };
 
   return (

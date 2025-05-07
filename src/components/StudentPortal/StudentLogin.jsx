@@ -55,6 +55,10 @@ const StudentLogin = () => {
     setShowPassword(!showPassword);
   };
 
+  const navigateToLanding = () => {
+    navigate('/');
+  };
+
   const inputBorderClass = invalidCredentials 
     ? "border-red-300 bg-red-50" 
     : "border-gray-300 bg-[#f7f6ff]";
@@ -158,7 +162,10 @@ const StudentLogin = () => {
         </div>
       </div>
 
-      <div className="absolute left-[42px] top-[37px] text-white text-[40px] font-['Tinos'] tracking-wide">
+      <div 
+        onClick={navigateToLanding}
+        className="absolute left-[42px] top-[37px] text-white text-[40px] font-['Tinos'] tracking-wide cursor-pointer hover:text-[#f3ce73] transition-colors"
+      >
         THE HARBOARD UNIVERSITY
       </div>
     </div>

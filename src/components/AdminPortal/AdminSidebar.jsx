@@ -233,13 +233,22 @@ const AdminSidebar = () => {
 
   const confirmLogout = async () => {
     setShowLogoutConfirm(false);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Error signing out:", error.message);
+    
+    try {
+      // Sign out the user from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error.message);
+      }
+      
+      // Clear admin flag
+      localStorage.removeItem("isAdmin");
+      
+      // Use window.location for a full page reload
+      window.location.href = "/admin-login";
+    } catch (error) {
+      console.error("Error during logout:", error);
     }
-    // Clear admin flag and redirect to admin login
-    localStorage.removeItem("isAdmin");
-    window.location.href = "/";
   };
 
   const cancelLogout = () => {

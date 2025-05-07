@@ -577,7 +577,7 @@ export default function LandingPage() {
           <div className="space-y-4">
             {[
               {
-                question: "What fees are covered by the student payment portal??",
+                question: "What fees are covered by the student payment portal?",
                 answer: "The student payment portal handles all of the university's organization's membership fees. You can view a complete breakdown of your membership fees in the Liabilities section after logging in. Each fee includes details about payment deadlines and the specific department or organization collecting the payment."
               },
               {

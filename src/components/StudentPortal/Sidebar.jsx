@@ -217,9 +217,20 @@ const Sidebar = () => {
 
   // proceeds with logout and redirects to login page
   const confirmLogout = async () => {
-    setShowLogoutConfirm(false);  
-    await supabase.auth.signOut();
-    navigate('/student-login'); // Redirect to login page after sign out
+    setShowLogoutConfirm(false);
+    
+    try {
+      // Sign out the user from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error.message);
+      }
+      
+      // Use window.location for a full page reload
+      window.location.href = "/student-login";
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
 
   // cancels logout action
