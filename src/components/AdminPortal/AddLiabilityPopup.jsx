@@ -4,7 +4,7 @@ import { supabase } from "../../App";
 import { AcademicYear, Semester } from "../../models/Period";
 import { usePeriods } from "./hooks/usePeriods";
 
-const AddLiabilityPopup = ({ organization, onClose, onAddLiability: onLiabilityAdded }) => {
+const AddLiabilityPopup = ({ organization, onClose, onLiabilityAdded }) => {
   // Form data state
   const [formData, setFormData] = useState({
     organizationId: organization?.id || "",

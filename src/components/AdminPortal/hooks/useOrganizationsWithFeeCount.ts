@@ -6,8 +6,9 @@ import { toCamelCase } from '../../../Utils';
 export interface OrganizationWithFeeCount {
     id: string;
     name: string;
-    feeCount: number;
-    pendingFeeCount: number;
+    feeCount: number;  // No. of fees under an organization
+    pendingVerificationFeeCount: number;  // Fees with [Status.UNDER_REVIEW]
+    unsettledFeeCount: number;  // Fees != Status.PAID
 }
 
 interface UseOrganizationsWithFeeCountResult {
@@ -25,7 +26,7 @@ export const useOrganizationsWithFeeCount = (): UseOrganizationsWithFeeCountResu
         const fetchOrgs = async () => {
         const { data, error } = await supabase
             .from('organizations_with_fee_count')
-            .select('id, name, fee_count, pending_fee_count');
+            .select('*');
 
         if (error) {
             setError(error as Error);

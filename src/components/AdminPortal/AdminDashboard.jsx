@@ -60,16 +60,16 @@ const AdminDashboard = () => {
     // console.log("Item:", item.name, "Pending:", item.pendingFeeCount, "Filter:", statusFilter);
 
     // If all orgs have pendingFeeCount < 10, they'd all be "Low Priority"
-    if (statusFilter === "High Priority" && item.pendingFeeCount < 20) {
+    if (statusFilter === "High Priority" && item.pendingVerificationFeeCount < 20) {
       return false;
     }
     
     if (statusFilter === "Medium Priority" && 
-       (item.pendingFeeCount < 10 || item.pendingFeeCount >= 20)) {
+       (item.pendingVerificationFeeCount < 10 || item.pendingVerificationFeeCount >= 20)) {
       return false;
     }
     
-    if (statusFilter === "Low Priority" && item.pendingFeeCount >= 10) {
+    if (statusFilter === "Low Priority" && item.pendingVerificationFeeCount >= 10) {
       return false;
     }
     
@@ -117,9 +117,9 @@ const AdminDashboard = () => {
 
   const getSummary = () => {
     const academic = organizations.length;
-    const highPriority = organizations.filter(item => item.pendingFeeCount >= 20).length;
-    const mediumPriority = organizations.filter(item => item.pendingFeeCount >= 10 && item.pendingFeeCount < 20).length;
-    const lowPriority = organizations.filter(item => item.pendingFeeCount < 10).length;
+    const highPriority = organizations.filter(item => item.pendingVerificationFeeCount >= 20).length;
+    const mediumPriority = organizations.filter(item => item.pendingVerificationFeeCount >= 10 && item.pendingVerificationFeeCount < 20).length;
+    const lowPriority = organizations.filter(item => item.pendingVerificationFeeCount < 10).length;
     
     return { academic, highPriority, mediumPriority, lowPriority };
   };
@@ -238,7 +238,7 @@ const AdminDashboard = () => {
       ) : (
         <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
           {currentOrganizations.map((item) => {
-            const priorityStyle = getPriorityStyle(item.pendingFeeCount);
+            const priorityStyle = getPriorityStyle(item.pendingVerificationFeeCount);
             return (
               <div
                 key={item.id}
@@ -252,7 +252,7 @@ const AdminDashboard = () => {
                   style={{ color: priorityStyle.color }}
                   >
                   {priorityStyle.icon}
-                  {item.pendingFeeCount} unpaid students
+                  {item.unsettledFeeCount} unsettled
                 </span>
                 </span>
                 <span style={{ width: "20%" }}>

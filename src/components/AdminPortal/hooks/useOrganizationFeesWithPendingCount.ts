@@ -4,11 +4,11 @@ import { supabase } from '../../../App';
 import { Fee } from '../../../models/Fee';
 
 export class FeeWithPendingCount extends Fee {
-    pendingFeeCount: number;
+    pendingVerificationFeeCount: number;
 
     constructor(data: Record<string, any>) {
         super(data);
-        this.pendingFeeCount = data.pending_count;
+        this.pendingVerificationFeeCount = data.pending_verification_fee_count;
     }
 }
 

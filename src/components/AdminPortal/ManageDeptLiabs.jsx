@@ -3,12 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Edit, Trash2, CheckCircle } from "lucide-react";
 import AddLiabilityPopup from "./AddLiabilityPopup";
 import EditLiabilityPopup from "./EditLiabilityPopup";
-import { supabase } from "../../App";
 import { updateFee, getFeeById, deleteFee } from "../../helpers/FeeHelpers";
-import { useFees } from "./hooks/useFees";
-import { usePeriods } from "./hooks/usePeriods";
-import { parseStatus } from "../../models/Status";
-import { parseSemester } from "../../models/Period";
+import { useFeesWithStudentCount } from "./hooks/useFeesWithStudentCount";
+import TagPopup from "./TagPopup";
 
 const ManageDeptLiabs = () => {
   const location = useLocation();
@@ -17,14 +14,15 @@ const ManageDeptLiabs = () => {
   const [deleteModal, setDeleteModal] = useState({ show: false, liability: null });
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
-  const [editingLiability, setEditingLiability] = useState(null);
+  const [showTagPopup, setShowTagPopup] = useState(false);
+  const [selectedLiability, setEditingLiability] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [successModal, setSuccessModal] = useState({ show: false, message: '', action: '' });
   
   // Preserve the organization information from location state
   const organization = location.state?.organization;
   
-  const { fees, loading, error, refetchFees } = useFees(organization.id);
+  const { fees, loading, error, refetchFees } = useFeesWithStudentCount(organization.id);
   
   const rowsPerPage = 5;
   const totalPages = Math.ceil(fees.length / rowsPerPage);
@@ -172,6 +170,26 @@ const ManageDeptLiabs = () => {
     await refetchFees();
   };
   
+  const closeTagLiabilityPopup = () => {
+    setShowTagPopup(false);
+    setEditingLiability(null);
+  };
+  
+  const handleTagged = async () => {
+    // Close the popup
+    setShowTagPopup(false);
+    
+    // Show success message
+    setSuccessModal({
+      show: true,
+      message: "Students successfully tagged!",
+      action: "tag"
+    });
+    
+    // Refresh the data
+    await refetchFees();
+  };
+  
   // For deleting liability
   const handleDeleteLiability = (liability, e) => {
     if (e) e.stopPropagation();
@@ -273,12 +291,13 @@ const ManageDeptLiabs = () => {
       </div>
       
       {/* Table Header - Removed LIABILITY NAME column */}
-      <div className="w-full grid grid-cols-6 py-4 border-b bg-gray-50 px-4 rounded-t-lg">
-        <span className="text-gray-700 font-semibold">ACADEMIC YEAR</span>
+      <div className="w-full grid grid-cols-7 py-4 border-b bg-gray-50 px-4 rounded-t-lg">
+        <span className="text-gray-700 font-semibold">YEAR</span>
         <span className="text-gray-700 font-semibold">PERIOD</span>
         <span className="text-gray-700 font-semibold">AMOUNT</span>
         <span className="text-gray-700 font-semibold">DUE DATE</span>
         <span className="text-gray-700 font-semibold">COLLECTOR</span>
+        <span className="text-gray-700 font-semibold">STUDENTS</span>
         <span className="text-gray-700 font-semibold text-center">ACTIONS</span>
       </div>
       
@@ -296,13 +315,21 @@ const ManageDeptLiabs = () => {
           {currentLiabilities.map((liability) => (
             <div
               key={liability.id}
-              className="w-full grid grid-cols-6 py-4 px-4 border-b hover:bg-gray-50"
+              className="w-full grid grid-cols-7 py-4 px-4 border-b hover:bg-gray-50"
             >
               <span className="text-gray-700">{liability.periodId?.year}</span>
               <span className="text-gray-700">{liability.periodId?.semester}</span>
               <span className="text-gray-700">{formatCurrency(liability.amount)}</span>
               <span className="text-gray-700">{formatDate(liability.deadline)}</span>
               <span className="text-gray-700">{liability.collectorName}</span>
+              <span 
+                onClick={() => {
+                  setShowTagPopup(true);
+                  setEditingLiability(liability);
+                }} 
+                className="text-blue-700 hover:bg-gray-50 cursor-pointer">
+                {liability.taggedCount}/{liability.studentCount} tagged
+              </span>
               <div className="flex space-x-2 justify-center">
                 <button 
                   onClick={(e) => handleEditLiability(liability, e)}
@@ -440,17 +467,25 @@ const ManageDeptLiabs = () => {
         <AddLiabilityPopup
           organization={organization}
           onClose={closeAddLiabilityPopup}
-          onAddLiability={handleAddLiability}
+          onLiabilityAdded={handleAddLiability}
         />
       )}
       
       {/* Edit Liability Popup */}
-      {showEditPopup && editingLiability && (
+      {showEditPopup && selectedLiability && (
         <EditLiabilityPopup
-          liability={editingLiability}
+          liability={selectedLiability}
           organization={organization}
           onClose={closeEditLiabilityPopup}
           onUpdateLiability={handleUpdateLiability}
+        />
+      )}
+      
+      {showTagPopup && (
+        <TagPopup
+          liability={selectedLiability}
+          onClose={closeTagLiabilityPopup}
+          onTagged={handleTagged}
         />
       )}
     </div>

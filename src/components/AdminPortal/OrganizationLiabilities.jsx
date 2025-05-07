@@ -75,7 +75,7 @@ const OrganizationLiabilities = () => {
   };
 
   const getTotalPendingVerifications = () => {
-    return fees.reduce((total, item) => total + item.pendingFeeCount, 0);
+    return fees.reduce((total, item) => total + item.pendingVerificationFeeCount, 0);
   };
 
   return (
@@ -154,7 +154,7 @@ const OrganizationLiabilities = () => {
                 <span style={{ width: "15%" }} className="text-gray-600">{formatAmount(item.amount)}</span>
                 <span style={{ width: "20%" }}>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-orange-100 border border-orange-300 text-orange-700">
-                    {item.pendingFeeCount} pending students
+                    {item.pendingVerificationFeeCount} pending students
                   </span>
                 </span>
                 <span style={{ width: "20%" }} className="text-gray-600">{item.formattedDeadline}</span>
