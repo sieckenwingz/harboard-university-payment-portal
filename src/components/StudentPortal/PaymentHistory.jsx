@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Calendar, 
@@ -11,14 +11,18 @@ import {
   X,
   AlertTriangle,
   PhilippinePeso,
-  Filter
+  Filter,
+  Loader2
 } from "lucide-react";
 import ReceiptViewer from "./ReceiptViewer";
-import { formatDate } from "../../Utils";
+import { formatDate, formatAmount } from '../../Utils';
+import { supabase } from '../../App';
+import { useAuth } from '../../context/AuthContext';
 
 const PaymentHistory = () => {
+  const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
-  const [dateRange, setDateRange] = useState("Date Range");
+  const [dateRange, setDateRange] = useState("All time");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -27,129 +31,89 @@ const PaymentHistory = () => {
   const [paymentType, setPaymentType] = useState("All Payments");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [showAlertMessage, setShowAlertMessage] = useState(false);
-  
-  // sample payment history (both successful and failed payments)
-  const samplePaymentHistory = () => {
-    const payments = [];
-    
-    // Sample fee names from liabilities component
-    const feeNames = [
-      "Tuition Fee", "Miscellaneous Fee", "Laboratory Fee", "Library Fee",
-      "Enrollment Fee", "Computer Lab Fee", "Student ID Fee", "Student Development Fee",
-      "Building/Facility Fee", "Course Materials Fee", "Student Council Fee",
-      "College of Engineering Fee", "Sports Team Fee", "Club Membership Fee"
-    ];
-    
-    // random payments with different statuses
-    for (let i = 0; i < 30; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - Math.floor(Math.random() * 120)); // random date eme eme lang
-      
-      const amount = Math.floor(Math.random() * 5000) + 500;
-      const feeName = feeNames[Math.floor(Math.random() * feeNames.length)];
-      
-      // Determine status - 70% successful, 30% failed // random lang hehe
-      const isSuccessful = Math.random() < 0.7;
-      const status = isSuccessful ? "Approved" : "Rejected";
-      
-      // receipt number for successful payments lang
-      const receiptNumber = isSuccessful ? `RCPT-${300000 + i}` : "-";
-      
-      payments.push({
-        id: `TXN-${1000000 + i}`,
-        feeName: feeName,
-        amount: amount,
-        paymentDate: date.toISOString().split('T')[0],
-        paymentMethod: ["Credit Card", "Bank Transfer", "Online Banking", "Mobile Payment"][Math.floor(Math.random() * 4)],
-        referenceNumber: `REF${200000 + i}`,
-        status: status,
-        receiptNumber: receiptNumber,
-        approvedBy: isSuccessful ? "Admin User" : "-",
-        approvalDate: isSuccessful ? new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : "-", // Day after payment
-        rejectionReason: !isSuccessful ? ["Insufficient funds", "Invalid account", "Payment verification failed", "Transaction timeout"][Math.floor(Math.random() * 4)] : ""
-      });
-    }
-    
-    // sort by payment date (newest first)
-    return payments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
-  };
-  
   const [paymentHistory, setPaymentHistory] = useState([]);
-  
-  useEffect(() => {
-    // data loading simulation
-    setIsLoading(true);
-    setTimeout(() => {
-      setPaymentHistory(samplePaymentHistory());
-      setIsLoading(false);
-    }, 800);
-  }, []);
+  const [error, setError] = useState(null);
   
   const rowsPerPage = 5;
-  
-  // summary statistics
-  const getSummary = () => {
-    const successful = paymentHistory.filter(p => p.status === "Approved").length;
-    const failed = paymentHistory.filter(p => p.status === "Rejected").length;
-    const availableReceipts = paymentHistory.filter(p => p.status === "Approved").length;
-    
-    return { successful, failed, availableReceipts };
-  };
-  
-  const summary = getSummary();
-  
-  // Filter payment history based on search term and filters
-  const filteredPayments = paymentHistory.filter((payment) => {
-    // filter by payment type
-    if (paymentType === "School Fees" && !payment.feeName.includes("Fee")) return false;
-    if (paymentType === "Membership Fees" && !payment.feeName.includes("Membership")) return false;
-    
-    // filter by status
-    if (statusFilter === "Successful" && payment.status !== "Approved") return false;
-    if (statusFilter === "Failed" && payment.status !== "Rejected") return false;
-    
-    // filter by date range
-    if (dateRange === "Last 30 days") {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      if (new Date(payment.paymentDate) < thirtyDaysAgo) return false;
-    } else if (dateRange === "Last 90 days") {
-      const ninetyDaysAgo = new Date();
-      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      if (new Date(payment.paymentDate) < ninetyDaysAgo) return false;
-    } else if (dateRange === "This semester") {
-      // simulate lang kunwari semester start date para lang sa date ng payment
-      const semesterStart = new Date("2025-01-01");
-      if (new Date(payment.paymentDate) < semesterStart) return false;
-    }
-    
-    // filter by search term
-    if (searchTerm && 
-        !payment.feeName.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !payment.id.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !String(payment.receiptNumber).toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
-    }
-    
-    return true;
-  });
-  
-  // apply sorting
-  let displayPayments = [...filteredPayments];
-  if (sortOrder === "Newest First") {
-    displayPayments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
-  } else if (sortOrder === "Oldest First") {
-    displayPayments.sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate));
-  } else if (sortOrder === "Amount: High to Low") {
-    displayPayments.sort((a, b) => b.amount - a.amount);
-  } else if (sortOrder === "Amount: Low to High") {
-    displayPayments.sort((a, b) => a.amount - b.amount);
-  }
-  
-  const totalPages = Math.ceil(displayPayments.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentPayments = displayPayments.slice(startIndex, startIndex + rowsPerPage);
-  
+
+  // Fetch payment history from Supabase
+  useEffect(() => {
+    const fetchPaymentHistory = async () => {
+      try {
+        setIsLoading(true);
+        
+        if (!user) {
+          console.error("No authenticated user found");
+          setIsLoading(false);
+          return;
+        }
+
+        // Query to get all student fees with their payments and fee details
+        // for the current user
+        const { data, error } = await supabase
+          .from('student_fees')
+          .select(`
+            id,
+            created_at,
+            fee_id (
+              id,
+              name,
+              amount,
+              deadline,
+              organization_id (name)
+            ),
+            payment_id (
+              id,
+              created_at,
+              amount,
+              ref_number,
+              payment_date,
+              status,
+              status_last_changed_at,
+              receipt_path,
+              checked_by
+            )
+          `)
+          .eq('student_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        // Transform the data to match the expected format
+        const payments = data
+          .filter(fee => fee.payment_id) // Only include fees with payments
+          .map(fee => ({
+            id: fee.payment_id.id,
+            feeName: fee.fee_id.name,
+            amount: fee.payment_id.amount,
+            paymentDate: fee.payment_id.payment_date,
+            paymentMethod: "GCash", // Assuming all payments are made via GCash
+            referenceNumber: fee.payment_id.ref_number,
+            status: fee.payment_id.status === "PAID" ? "Approved" : 
+                  fee.payment_id.status === "REJECTED" ? "Rejected" : "Under Review",
+            receiptNumber: `RCPT-${fee.payment_id.id}`,
+            approvedBy: fee.payment_id.checked_by ? "Admin User" : "-",
+            approvalDate: fee.payment_id.status === "PAID" ? fee.payment_id.status_last_changed_at : "-",
+            rejectionReason: fee.payment_id.status === "REJECTED" ? "Payment verification failed" : "",
+            receiptPath: fee.payment_id.receipt_path,
+            feeId: fee.fee_id.id,
+            studentFeeId: fee.id
+          }));
+
+        setPaymentHistory(payments);
+      } catch (err) {
+        console.error("Error fetching payment history:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPaymentHistory();
+  }, [user]);
+
   const handleViewReceipt = (e, payment) => {
     e.stopPropagation();
     if (payment.status === "Approved") {
@@ -195,6 +159,73 @@ const PaymentHistory = () => {
     else if (filterType === "Status") setStatusFilter(e.target.value);
     setCurrentPage(1);
   };
+  
+  // Filter payment history based on search term and filters
+  const filteredPayments = paymentHistory.filter((payment) => {
+    // Filter by payment type
+    if (paymentType === "School Fees" && !payment.feeName.includes("Fee")) return false;
+    if (paymentType === "Membership Fees" && !payment.feeName.includes("Membership")) return false;
+    
+    // Filter by status
+    if (statusFilter === "Successful" && payment.status !== "Approved") return false;
+    if (statusFilter === "Failed" && payment.status !== "Rejected") return false;
+    
+    // Filter by date range
+    if (dateRange === "Last 30 days") {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      if (new Date(payment.paymentDate) < thirtyDaysAgo) return false;
+    } else if (dateRange === "Last 90 days") {
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      if (new Date(payment.paymentDate) < ninetyDaysAgo) return false;
+    } else if (dateRange === "This semester") {
+      // Assuming semester start date of January 1st of current year
+      const currentYear = new Date().getFullYear();
+      const semesterStart = new Date(`${currentYear}-01-01`);
+      if (new Date(payment.paymentDate) < semesterStart) return false;
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const searchTermLower = searchTerm.toLowerCase();
+      return (
+        (payment.feeName && payment.feeName.toLowerCase().includes(searchTermLower)) ||
+        (payment.id && payment.id.toString().toLowerCase().includes(searchTermLower)) ||
+        (payment.receiptNumber && payment.receiptNumber.toLowerCase().includes(searchTermLower)) ||
+        (payment.referenceNumber && payment.referenceNumber.toLowerCase().includes(searchTermLower))
+      );
+    }
+    
+    return true;
+  });
+  
+  // Apply sorting
+  let displayPayments = [...filteredPayments];
+  if (sortOrder === "Newest First") {
+    displayPayments.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+  } else if (sortOrder === "Oldest First") {
+    displayPayments.sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate));
+  } else if (sortOrder === "Amount: High to Low") {
+    displayPayments.sort((a, b) => b.amount - a.amount);
+  } else if (sortOrder === "Amount: Low to High") {
+    displayPayments.sort((a, b) => a.amount - b.amount);
+  }
+  
+  const totalPages = Math.ceil(displayPayments.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const currentPayments = displayPayments.slice(startIndex, startIndex + rowsPerPage);
+  
+  // Summary statistics
+  const getSummary = () => {
+    const successful = paymentHistory.filter(p => p.status === "Approved").length;
+    const failed = paymentHistory.filter(p => p.status === "Rejected").length;
+    const availableReceipts = paymentHistory.filter(p => p.status === "Approved").length;
+    
+    return { successful, failed, availableReceipts };
+  };
+  
+  const summary = getSummary();
   
   const getStatusStyle = (status) => {
     if (status === "Approved") {
@@ -278,11 +309,10 @@ const PaymentHistory = () => {
               onChange={(e) => handleDropdownChange(e, "Date Range")}
               className="pl-8 pr-6 py-2 border rounded-md text-gray-700 w-auto appearance-none focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
             >
-              <option>Date Range</option>
+              <option>All time</option>
               <option>Last 30 days</option>
               <option>Last 90 days</option>
               <option>This semester</option>
-              <option>All time</option>
             </select>
             <Calendar className="absolute left-2 top-2.5 text-gray-500" size={18} />
             <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />
@@ -336,7 +366,7 @@ const PaymentHistory = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by fee name, transaction ID, receipt number..."
+            placeholder="Search by fee name, reference number, receipt number..."
             className="pl-10 pr-4 py-2 border rounded-md text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
           />
           <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
@@ -348,7 +378,7 @@ const PaymentHistory = () => {
         <span style={{ width: "22%" }} className="text-gray-700 font-semibold">FEE NAME</span>
         <span style={{ width: "12%" }} className="text-gray-700 font-semibold">AMOUNT</span>
         <span style={{ width: "17%" }} className="text-gray-700 font-semibold">PAYMENT DATE</span>
-        <span style={{ width: "17%" }} className="text-gray-700 font-semibold">TRANSACTION ID</span>
+        <span style={{ width: "17%" }} className="text-gray-700 font-semibold">REFERENCE #</span>
         <span style={{ width: "15%" }} className="text-gray-700 font-semibold">RECEIPT #</span>
         <span style={{ width: "10%" }} className="text-gray-700 font-semibold">STATUS</span>
         <span style={{ width: "12%" }} className="text-gray-700 font-semibold text-center">ACTIONS</span>
@@ -357,7 +387,11 @@ const PaymentHistory = () => {
       {/* Table Content */}
       {isLoading ? (
         <div className="w-full flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a63f42]"></div>
+          <Loader2 size={24} className="animate-spin text-[#a63f42]" />
+        </div>
+      ) : error ? (
+        <div className="w-full flex justify-center items-center h-32 text-red-500 text-sm bg-gray-50 rounded-b-lg">
+          Error loading payment records: {error}
         </div>
       ) : currentPayments.length === 0 ? (
         <div className="w-full flex justify-center items-center h-32 text-gray-500 text-sm bg-gray-50 rounded-b-lg">
@@ -376,9 +410,9 @@ const PaymentHistory = () => {
                 <span style={{ width: "22%" }} className="text-gray-700 font-medium">
                   {payment.feeName}
                 </span>
-                <span style={{ width: "12%" }} className="text-gray-700">₱{payment.amount.toLocaleString()}</span>
+                <span style={{ width: "12%" }} className="text-gray-700">{formatAmount(payment.amount)}</span>
                 <span style={{ width: "17%" }} className="text-gray-700">{formatDate(payment.paymentDate)}</span>
-                <span style={{ width: "17%" }} className="text-gray-700">{payment.id}</span>
+                <span style={{ width: "17%" }} className="text-gray-700">{payment.referenceNumber}</span>
                 <span style={{ width: "15%" }} className="text-gray-700">{payment.receiptNumber}</span>
                 <span style={{ width: "10%" }} className="text-gray-700">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${statusStyle.bgColor} border ${statusStyle.borderColor}`} style={{ color: statusStyle.color }}>
@@ -409,60 +443,62 @@ const PaymentHistory = () => {
       )}
       
       {/* Pagination */}
-      <div className="w-full flex items-center justify-between mt-6 px-4">
-        <span className="text-sm text-gray-600">
-          Showing page {currentPage} of {totalPages}
-        </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className={`p-2 px-4 rounded-lg shadow border text-sm flex items-center ${
-              currentPage === 1 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <ChevronLeft size={16} className="mr-1" /> Previous
-          </button>
-          
-          {/* Page Numbers */}
-          <div className="flex">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = currentPage <= 3 
-                ? i + 1 
-                : currentPage >= totalPages - 2 
-                  ? totalPages - 4 + i 
-                  : currentPage - 2 + i;
-              
-              if (pageNum <= totalPages && pageNum > 0) {
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-10 h-10 flex items-center justify-center rounded-md mx-0.5 ${
-                      currentPage === pageNum 
-                        ? "bg-[#a63f42] text-white" 
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              }
-              return null;
-            })}
+      {totalPages > 0 && (
+        <div className="w-full flex items-center justify-between mt-6 px-4">
+          <span className="text-sm text-gray-600">
+            Showing page {currentPage} of {totalPages}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className={`p-2 px-4 rounded-lg shadow border text-sm flex items-center ${
+                currentPage === 1 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <ChevronLeft size={16} className="mr-1" /> Previous
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="flex">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = currentPage <= 3 
+                  ? i + 1 
+                  : currentPage >= totalPages - 2 
+                    ? totalPages - 4 + i 
+                    : currentPage - 2 + i;
+                
+                if (pageNum <= totalPages && pageNum > 0) {
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-10 h-10 flex items-center justify-center rounded-md mx-0.5 ${
+                        currentPage === pageNum 
+                          ? "bg-[#a63f42] text-white" 
+                          : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                }
+                return null;
+              })}
+            </div>
+            
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className={`p-2 px-4 rounded-lg shadow border text-sm flex items-center ${
+                currentPage === totalPages ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Next <ChevronRight size={16} className="ml-1" />
+            </button>
           </div>
-          
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className={`p-2 px-4 rounded-lg shadow border text-sm flex items-center ${
-              currentPage === totalPages ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white border-gray-300 text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            Next <ChevronRight size={16} className="ml-1" />
-          </button>
         </div>
-      </div>
+      )}
       
       {/* Receipt Viewer Modal */}
       {showReceiptViewer && selectedPayment && (
@@ -472,7 +508,7 @@ const PaymentHistory = () => {
         />
       )}
       
-      {/**/}
+      {/* CSS animation for fade-in effect */}
       <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
