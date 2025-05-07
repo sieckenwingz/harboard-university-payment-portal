@@ -67,20 +67,38 @@ const LiabilitiesDashboard = () => {
     );
   };
 
-  const filteredLiabilities = fees.filter((item) => {
-    // filter by status (Paid Unpaid Under Review Rejected)
-    if (statusFilter !== "Status" && statusFilter !== item.status) return false;
+  // Update the filteredLiabilities function with proper null checks
+const filteredLiabilities = fees.filter((item) => {
+  // Filter by status (Paid Unpaid Under Review Rejected)
+  if (statusFilter !== "Status" && statusFilter !== item.status) return false;
+  
+  // Filter by search term with null checks
+  if (searchTerm) {
+    const searchTermLower = searchTerm.toLowerCase();
     
-    // filter by search term
-    if (searchTerm &&
-      !item.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !item.status.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !item.dueDate.includes(searchTerm) &&
-      !item.amount.includes(searchTerm)) {
+    // Check if fee name exists and contains search term
+    const nameMatch = item.feeId?.name ? 
+      item.feeId.name.toLowerCase().includes(searchTermLower) : false;
+    
+    // Check if status exists and contains search term
+    const statusMatch = item.status ? 
+      item.status.toLowerCase().includes(searchTermLower) : false;
+    
+    // Check for amount match - convert to string first
+    const amountMatch = item.feeId?.amount ? 
+      formatAmount(item.feeId.amount).toLowerCase().includes(searchTermLower) : false;
+    
+    // Check for due date match
+    const dueDateMatch = item.feeId?.deadline ? 
+      formatDate(item.feeId.deadline).toLowerCase().includes(searchTermLower) : false;
+    
+    // If none of the fields match, exclude this item
+    if (!nameMatch && !statusMatch && !amountMatch && !dueDateMatch) {
       return false;
     }
-    return true;
-  });
+  }
+  return true;
+});
 
   let displayLiabilities = [...filteredLiabilities];
   if (amountFilter === "High to Low") {
@@ -259,7 +277,7 @@ const LiabilitiesDashboard = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by fee name, fee type, status..."
+            placeholder="Search by fee name, amount, due date..."
             className="pl-10 pr-4 py-2 border rounded-md text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
           />
           <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
