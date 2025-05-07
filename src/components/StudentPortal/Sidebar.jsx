@@ -272,7 +272,7 @@ const Sidebar = () => {
 
           {/* toggle sidebar button */}
           <button
-            className="absolute top-24 right-0 transform bg-white border border-gray-200 rounded-l-full w-6 h-12 shadow-md hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42] z-10 flex items-center justify-center"
+            className="absolute top-20 -right-0 bottom-0 my-auto transform bg-white border border-gray-200 rounded-l-full w-6 h-12 shadow-md hover:bg-[#f2f0ff] text-gray-600 hover:text-[#a63f42] z-10 flex items-center justify-center"
             onClick={() => setCollapsed(!collapsed)}
             title="Toggle sidebar"
           >
