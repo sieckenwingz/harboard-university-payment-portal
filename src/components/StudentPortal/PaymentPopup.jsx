@@ -16,11 +16,37 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptUrl, setReceiptUrl] = useState(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [showFirstPopup, setShowFirstPopup] = useState(true);
   const [showSecondPopup, setShowSecondPopup] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  /**
+   * TODO: Move (Duplicate from PaymentPopup.jsx)
+   * 
+   * Automatically fetch the receipt signed url everytime the [receiptPath] of
+   * the [selectedLiability] changes.
+   */
+  useEffect(() => {
+    async function fetchImage() {
+      if (selectedLiability?.feeId?.qrCode == null) return;
+
+      const { data, error } = await supabase
+        .storage
+        .from('fee-qr-codes')
+        .createSignedUrl(selectedLiability?.feeId?.qrCode, 60); // path inside bucket
+
+      if (data?.signedUrl) {
+        setQrCodeUrl(data.signedUrl);
+      } else {
+        console.error(error);
+      }
+    }
+
+    fetchImage();
+  }, [selectedLiability?.feeId?.qrCode]);
 
   /**
    * Reset edit field values everytime the [selectedLiability changes].
@@ -236,7 +262,8 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
               </div>
 
               <div className="absolute left-[213px] top-[95px] w-[200px] h-[200px] border-4 border-maroon flex items-center justify-center">
-                <span className="text-black text-lg text-center">QR Code</span>
+                {selectedLiability?.feeId?.qrCode ? <img className="w-full h-full object-cover" src={qrCodeUrl} alt="QR Code" />
+                : <span className="text-black text-lg text-center">QR Code</span>}
               </div>
 
               <div className="absolute left-[145px] top-[310px] w-[337px] text-center text-black text-sm font-normal">
