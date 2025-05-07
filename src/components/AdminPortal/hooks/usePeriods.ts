@@ -3,14 +3,14 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../App';
 import { AcademicYear, Period } from '../../../models/Period';
 
-interface UseOrganizationsWithFeeCountResult {
+interface UsePeriodsResults {
     periods: Period[];
     yearPeriods: Record<AcademicYear, Period[]>;
     loading: boolean;
     error: Error | null;
 }
   
-export const usePeriods = (): UseOrganizationsWithFeeCountResult => {
+export const usePeriods = (): UsePeriodsResults => {
     const [periods, setPeriods] = useState<Period[]>([]);
     const [yearPeriods, setYearPeriods] = useState<Record<AcademicYear, Period[]>>(<Record<AcademicYear, Period[]>>{});
     const [loading, setLoading] = useState<boolean>(true);
