@@ -5,6 +5,9 @@ import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Users, Clock, C
 import ViewDetailsPopup from "./ViewDetailsPopup"; 
 import { supabase } from "../../App";
 import { useOrganizationsWithFeeCount } from "./hooks/useOrganizationsWithFeeCount";
+import { parseStatus } from "../../models/Status";
+import { AcademicYear, parseAcademicYear, parseSemester } from "../../models/Period";
+import { getEnumKeyByValue } from "../../helpers/EnumHelpers";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -54,7 +57,7 @@ const AdminDashboard = () => {
 
   const filteredOrganizations = organizations.filter((item) => {
     // Add debugging to see what's happening
-    console.log("Item:", item.name, "Pending:", item.pendingFeeCount, "Filter:", statusFilter);
+    // console.log("Item:", item.name, "Pending:", item.pendingFeeCount, "Filter:", statusFilter);
 
     // If all orgs have pendingFeeCount < 10, they'd all be "Low Priority"
     if (statusFilter === "High Priority" && item.pendingFeeCount < 20) {

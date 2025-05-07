@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Upload, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "../../App";
+import { AcademicYear, Semester } from "../../models/Period";
+import { usePeriods } from "./hooks/usePeriods";
 
-const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
+const AddLiabilityPopup = ({ organization, onClose, onAddLiability: onLiabilityAdded }) => {
   // Form data state
   const [formData, setFormData] = useState({
     organizationId: organization?.id || "",
-    periodId: "",
-    academicYear: "2024 - 2025", // Default to current academic year
+    name: "",
+    academicYear: AcademicYear.YEAR_2024_2025, // Default to current academic year
+    periodId: undefined,
     amount: "",
     dueDate: "",
     collectorName: "",
@@ -17,7 +20,6 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
   
   // State for UI
   const [loading, setLoading] = useState(false);
-  const [periods, setPeriods] = useState([]);
   const [qrPreview, setQrPreview] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -25,26 +27,18 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
   const [formVisible, setFormVisible] = useState(false);
   const [newLiabilityData, setNewLiabilityData] = useState(null);
   
-  // Fetch periods for dropdown
+  const { periods, yearPeriods, loading: periodsLoading, error: periodsError } = usePeriods();
+
+  const [ periodOptions, setPeriodOptions] = useState([]);
+
   useEffect(() => {
-    const fetchPeriods = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('periods')
-          .select('id, year, semester');
-        
-        if (error) throw error;
-        
-        if (data) {
-          setPeriods(data);
-        }
-      } catch (error) {
-        console.error("Error fetching periods:", error);
-      }
-    };
-    
-    fetchPeriods();
-    
+    setPeriodOptions(yearPeriods[formData.academicYear]);
+  }, [formData.academicYear, periods]);
+
+  useEffect(() => {
+  }, [formData]);
+
+  useEffect(() => {    
     // Animation timing
     setTimeout(() => setFormVisible(true), 50);
   }, []);
@@ -86,8 +80,9 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
   // Validate form
   const validateForm = () => {
     const requiredFields = [
-      'periodId', 
+      'name', 
       'academicYear', 
+      'periodId',
       'amount', 
       'dueDate', 
       'collectorName', 
@@ -97,6 +92,8 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     const missingFields = requiredFields.filter(field => {
       return !formData[field] || formData[field].toString().trim() === '';
     });
+    
+    console.log(missingFields)
     
     if (missingFields.length > 0) {
       setErrorMessage(`Please fill in all required fields`);
@@ -129,13 +126,11 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
       // Prepare data for insertion
       const newFee = {
         organization_id: parseInt(formData.organizationId),
+        name: liabilityName,
         period_id: parseInt(formData.periodId),
         amount: Math.round(parseFloat(formData.amount) * 100), // Convert to cents
         deadline: formData.dueDate,
         collector_name: formData.collectorName,
-        name: liabilityName,
-        liab_type: "Membership Fee", // Set the type to Membership Fee
-        acad_year: formData.academicYear,
         account_number: formData.gcashNumber
       };
       
@@ -201,8 +196,8 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
     setTimeout(() => {
       setShowSuccessModal(false);
       // Call the parent callback with the new liability data
-      if (typeof onAddLiability === 'function' && newLiabilityData) {
-        onAddLiability(newLiabilityData);
+      if (typeof onLiabilityAdded === 'function' && newLiabilityData) {
+        onLiabilityAdded(newLiabilityData);
       }
       onClose();
     }, 300);
@@ -239,6 +234,12 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
               </div>
               <input type="hidden" name="organizationId" value={formData.organizationId} />
             </div>
+
+            {/* Organization - Display only */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full pl-2 p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent" />
+            </div>
             
             {/* Academic Year and Period - Side by side */}
             <div className="grid grid-cols-2 gap-4">
@@ -259,20 +260,17 @@ const AddLiabilityPopup = ({ organization, onClose, onAddLiability }) => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Period *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Semester *</label>
                 <select
                   name="periodId"
-                  value={formData.periodId}
+                  value={formData.periodId?.id}
                   onChange={handleInputChange}
                   required
                   className="w-full p-2 border border-gray-300 rounded-md text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent"
                 >
-                  <option value="">Select period</option>
-                  {periods.map(period => (
-                    <option key={period.id} value={period.id}>
-                      {period.semester === "1" ? "1st Semester" : 
-                       period.semester === "2" ? "2nd Semester" : "Summer"}
-                    </option>
+                  <option value={undefined}>Select semester</option>
+                  {periodOptions?.map(period => (
+                    <option key={period.id} value={period.id}>{period.semester}</option>
                   ))}
                 </select>
               </div>
