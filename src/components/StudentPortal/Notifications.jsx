@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Menu, MoreVertical, Check, Trash } from 'lucide-react';
+import { formatDate } from '../../Utils';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([
@@ -62,12 +63,6 @@ const Notifications = () => {
   const deleteNotification = (id) => {
     setNotifications(notifications.filter(notification => notification.id !== id));
     setOpenMenuId(null);
-  };
-
-  // Format date to a more readable format
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   // Toggle menu open/close

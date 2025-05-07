@@ -26,6 +26,7 @@ import { useRejectFee } from "./hooks/verification/useRejectFee";
 import pdfToText from "react-pdftotext";
 import { checkTransactionDetails, extractGcashTransactions } from "../../TransactionUtils";
 import { useBulkConfirmFee } from "./hooks/verification/useBulkConfirmFee";
+import { formatAmount, formatDate } from "../../Utils";
 
 const StudentPayments = () => {
   const { organizationId, liabilityId: feeId } = useParams();
@@ -194,19 +195,6 @@ const StudentPayments = () => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const currentPageData = filteredData.slice(startIndex, startIndex + rowsPerPage);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatAmount = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'PHP',
-      minimumFractionDigits: 2
-    }).format(amount / 100);
-  };
-
   const isStudentMatched = (studentId) => {
     return parseResults.matched.some(matchResult => matchResult.studentFee.studentId.id === studentId);
   };
@@ -250,7 +238,7 @@ const StudentPayments = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
           <span className="text-lg font-semibold text-gray-700 mr-2">Liability Amount:</span>
-          <span className="text-lg text-gray-800">{liability && formatAmount(liability.amount)}</span>
+          <span className="text-lg text-gray-800">{liability && formatAmount(liability.amount, 2)}</span>
         </div>
         
         <div className="flex items-center space-x-4">

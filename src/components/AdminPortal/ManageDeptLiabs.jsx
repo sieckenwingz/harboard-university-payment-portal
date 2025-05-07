@@ -6,6 +6,7 @@ import EditLiabilityPopup from "./EditLiabilityPopup";
 import { updateFee, getFeeById, deleteFee } from "../../helpers/FeeHelpers";
 import { useFeesWithStudentCount } from "./hooks/useFeesWithStudentCount";
 import TagPopup from "./TagPopup";
+import { formatDate } from "../../Utils";
 
 const ManageDeptLiabs = () => {
   const location = useLocation();
@@ -31,12 +32,6 @@ const ManageDeptLiabs = () => {
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PHP' }).format(amount/100);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'No due date';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
   
   const goBackToManagement = () => {

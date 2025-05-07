@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../App';
 import { processOcr } from '../../lib/ocr/Ocr';
 import { uploadReceiptAndInsertPayment } from '../../lib/data/UploadPayment';
-import { formatDate } from '../../Utils';
+import { formatAmount, formatDate } from '../../Utils';
 
 const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
   const {user, _} = useAuth();
@@ -229,9 +229,9 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
               </div>
 
               <div className="absolute left-[342px] top-[348px] text-black text-base font-normal">
-                {selectedLiability?.accountName || 'John Doe'}<br />
-                {selectedLiability?.accountNumber || '1234567890'}<br />
-                ₱{(selectedLiability?.feeId.amount / 100).toFixed(2) || '0.00'}<br />
+                {selectedLiability?.feeId.collectorName}<br />
+                {selectedLiability?.feeId.accountNumber}<br />
+                {formatAmount(selectedLiability?.feeId.amount)}<br />
                 {formatDate(selectedLiability?.feeId.deadline)}
               </div>
 
@@ -351,10 +351,10 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
               {/* TODO: Make fields editable in case of incorrect OCR values */}
               <div className="absolute left-[522px] top-[139px] text-black text-base font-normal">
                 {getFeeName()}<br />
-                {selectedLiability?.accountName || 'John Doe'}<br />
-                {selectedLiability?.accountNumber || '1234567890'}<br />
+                {selectedLiability?.feeId.collectorName}<br />
+                {selectedLiability?.feeId.accountNumber}<br />
                 {refNoEdit}<br />
-                ₱{((amountEdit) / 100).toFixed(2)}<br />
+                {formatAmount(amountEdit)}<br />
                 {formatDate(dateEdit)}
               </div>
             </motion.div>

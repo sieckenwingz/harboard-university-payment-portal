@@ -2,17 +2,12 @@ import React, { useRef } from "react";
 import { X, Download, Printer } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import useUserData from "./hooks/useUserData";
+import { formatDate } from "../../Utils";
 
 const ReceiptViewer = ({ payment, onClose }) => {
   const receiptRef = useRef(null);
   const { userData, getFullName } = useUserData();
   const fullName = getFullName();
-  
-  // date format
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
   
   // download receipt as pdf
   const handleDownload = () => {

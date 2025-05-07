@@ -1,19 +1,11 @@
 import React from "react";
 import { X, CheckCircle, AlertTriangle, Calendar, Clock, RefreshCw } from "lucide-react";
+import { formatDate } from "../../Utils";
 
 const ViewDetailsPopup = ({ show, organizationData, onClose, onDataChange }) => {
   if (!show || !organizationData) {
     return null;
   }
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   const getPriorityLabel = (pendingCount) => {
     if (pendingCount >= 20) {

@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter } from "lucide-react";
 import { useOrganizationFeesWithPendingCount } from "./hooks/useOrganizationFeesWithPendingCount";
+import { formatAmount } from "../../Utils";
 
 const OrganizationLiabilities = () => {
   const { organizationId } = useParams();
@@ -60,19 +61,6 @@ const OrganizationLiabilities = () => {
   const totalPages = Math.ceil(filteredLiabilities.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const currentLiabilities = filteredLiabilities.slice(startIndex, startIndex + rowsPerPage);
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatAmount = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'PHP',
-      minimumFractionDigits: 2
-    }).format(amount/100);
-  };
 
   const getTotalPendingVerifications = () => {
     return fees.reduce((total, item) => total + item.pendingVerificationFeeCount, 0);

@@ -14,6 +14,7 @@ import {
   Filter
 } from "lucide-react";
 import ReceiptViewer from "./ReceiptViewer";
+import { formatDate } from "../../Utils";
 
 const PaymentHistory = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,12 +86,6 @@ const PaymentHistory = () => {
   }, []);
   
   const rowsPerPage = 5;
-  
-  // date format
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
   
   // summary statistics
   const getSummary = () => {

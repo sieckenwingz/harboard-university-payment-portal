@@ -4,18 +4,9 @@
 import React from "react";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
+import { formatAmount, formatDate } from "../../Utils";
 
 const ManageReceiptView = ({ receipt, onClose }) => {
-  const formatAmount = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PHP' }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
   return (
     <motion.div 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"

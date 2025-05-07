@@ -3,6 +3,7 @@
 import React from "react";
 import { X, FileText, CheckCircle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { formatDate } from "../../Utils";
 
 const TransactionProcessingModal = ({
   isParsing,
@@ -12,10 +13,6 @@ const TransactionProcessingModal = ({
   onVerifyAllMatched,
   onRejectAllUnmatched
 }) => {
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
 
   return (
     <motion.div

@@ -119,14 +119,11 @@ const AddLiabilityPopup = ({ organization, onClose, onLiabilityAdded }) => {
     
     setLoading(true);
     
-    try {
-      // Generate liability name from organization name
-      const liabilityName = `${organization.name} Membership Fee`;
-      
+    try {      
       // Prepare data for insertion
       const newFee = {
         organization_id: parseInt(formData.organizationId),
-        name: liabilityName,
+        name: formData.name,
         period_id: parseInt(formData.periodId),
         amount: Math.round(parseFloat(formData.amount) * 100), // Convert to cents
         deadline: formData.dueDate,
@@ -160,7 +157,7 @@ const AddLiabilityPopup = ({ organization, onClose, onLiabilityAdded }) => {
       // Create object for UI update
       const newLiability = {
         id: data?.[0]?.id || Date.now().toString(),
-        name: liabilityName,
+        name: formData.name,
         type: "Membership Fee",
         academicYear: formData.academicYear,
         period: formData.periodId,

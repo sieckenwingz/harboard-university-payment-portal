@@ -3,6 +3,7 @@ import PaymentPopup from "./PaymentPopup";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Calendar, Filter, Check, AlertTriangle, RefreshCw, X } from "lucide-react";
 import { supabase } from "../../App";
 import { StudentFee } from "../../models/StudentFee";
+import { formatAmount, formatDate } from "../../Utils";
 
 const LiabilitiesDashboard = () => {
   const [fees, setFees] = useState([])
@@ -14,33 +15,6 @@ const LiabilitiesDashboard = () => {
   const [amountFilter, setAmountFilter] = useState("Amount");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLiability, setSelectedLiability] = useState(null);
-  
-  // liability categories
-  const schoolFees = [
-    "Tuition Fee",
-    "Miscellaneous Fee",
-    "Laboratory Fee",
-    "Library Fee",
-    "Enrollment Fee",
-    "Computer Lab Fee",
-    "Student ID Fee",
-    "Student Development Fee",
-    "Building/Facility Fee",
-    "Course Materials Fee"
-  ];
-  
-  const membershipFees = [
-    "Student Council Fee",
-    "College of Engineering Fee",
-    "Sports Team Fee",
-    "Club Membership Fee",
-    "Peer Support Group Fee",
-    "Student Government Fee",
-    "Student Publication Fee",
-    "Environmental Club Fee",
-    "Social Club Fee",
-    "National Honor Society Fee"
-  ];
   
   useEffect(() => {
     const fetchFees = async () => {
@@ -59,7 +33,7 @@ const LiabilitiesDashboard = () => {
 
       const { data: feesData, error: feesError } = await supabase
         .from('student_fees')
-        .select('*, payment_id(*), fee_id(*)')
+        .select('*, payment_id(*), fee_id(*), student_id(*)')
         .eq('student_id', user.id);
 
       if (feesError) {
@@ -169,12 +143,6 @@ const LiabilitiesDashboard = () => {
   };
 
   const summary = getSummary();
-
-  // date format
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -324,8 +292,8 @@ const LiabilitiesDashboard = () => {
                 onClick={() => setSelectedLiability(item)}
               >
                 <span style={{ width: "25%" }} className="text-gray-700 font-medium">{item.feeId.name}</span>
-                <span style={{ width: "15%" }} className="text-gray-700">₱{item.feeId.amount / 100}</span>
-                <span style={{ width: "20%" }} className="text-gray-700">{item.paymentId ? (item.paymentId.dueDate != null ? formatDate(item.dueDate) : "No due date")  : "No due date"}</span>
+                <span style={{ width: "15%" }} className="text-gray-700">{formatAmount(item.feeId.amount)}</span>
+                <span style={{ width: "20%" }} className="text-gray-700">{item.feeId ? (item.feeId.deadline != null ? formatDate(item.feeId.deadline) : "No due date")  : "No due date"}</span>
                 <span style={{ width: "20%" }} className="flex items-center">
                   <span 
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm ${statusStyle.bgColor} border ${statusStyle.borderColor}`} 

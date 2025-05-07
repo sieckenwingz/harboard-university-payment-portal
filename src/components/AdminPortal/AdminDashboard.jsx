@@ -126,12 +126,6 @@ const AdminDashboard = () => {
 
   const summary = getSummary();
 
-  // Format date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div>

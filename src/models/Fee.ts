@@ -1,3 +1,4 @@
+import { formatDate } from "../Utils";
 import { Organization } from "./Organization";
 import { Period } from "./Period";
 
@@ -46,24 +47,11 @@ export class Fee {
         this.qrCode = null;
       }
     }
-      
-    // TODO: Move to a single utils function to prevent duplicate code
-    // Helper method to format amount for display
-    get formattedAmount(): string {
-        return new Intl.NumberFormat('en-PH', {
-            style: 'currency',
-            currency: 'PHP'
-        }).format(this.amount / 100); // assuming amount is stored in cents
-    }
     
     // Helper method to format deadline for display
     get formattedDeadline(): string {
         if (!this.deadline) return 'No deadline';
-        return this.deadline.toLocaleDateString('en-PH', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        return formatDate(this.deadline);
     }
     
     // Convert to object suitable for API calls
