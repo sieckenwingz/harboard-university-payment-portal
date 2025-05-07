@@ -56,7 +56,7 @@ function AdminPublicRoute({ session, children }) {
 // Route guard for admin protected pages
 function AdminProtectedRoute({ session, children }) {
   const isAdmin = localStorage.getItem("isAdmin") === "true";
-  return session && isAdmin ? children : <Navigate to="/" replace />;
+  return session && isAdmin ? children : <Navigate to="/admin-login" replace />;
 }
 
 function App() {
