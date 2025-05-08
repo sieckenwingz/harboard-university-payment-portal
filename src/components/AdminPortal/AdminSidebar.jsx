@@ -14,7 +14,7 @@ import {
   Camera,
   Upload
 } from "lucide-react";
-import Avatar from "../common/Avatar"; // Import the Avatar component
+import Avatar from "../common/Avatar";
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
@@ -42,6 +42,9 @@ const AdminSidebar = () => {
   // Toggle user profile modal
   const toggleUserProfile = () => {
     setShowUserProfile(!showUserProfile);
+    if (!showUserProfile) {
+      console.log("Organization data:", adminData.organizations);
+    }
   };
 
   useEffect(() => {
@@ -188,6 +191,14 @@ const AdminSidebar = () => {
     }
   };
 
+  // Extract acronym from organization name
+  const extractAcronym = (orgName) => {
+    if (!orgName) return "";
+    // Check for acronym in parentheses like "Computer Engineering Students Organization (CURSOR)"
+    const match = orgName.match(/\(([^)]+)\)$/);
+    return match ? match[1] : orgName;
+  };
+
   const getSelectedPage = () => {
     const path = location.pathname;
     
@@ -264,6 +275,44 @@ const AdminSidebar = () => {
     { label: "Liabilities", icon: <LayoutDashboard size={18} /> },
     { label: "Management", icon: <Settings size={18} /> },
   ];
+
+  // Render organization acronyms from various data formats
+  const renderOrganizations = () => {
+    if (!adminData.organizations) {
+      return <p>No organizations</p>;
+    }
+
+    if (Array.isArray(adminData.organizations)) {
+      return adminData.organizations.map((org, index) => {
+        let acronym;
+        
+        if (typeof org === 'string') {
+          // If org is a direct string
+          acronym = extractAcronym(org);
+        } else if (org.org_acronym) {
+          // If org has an org_acronym property
+          acronym = org.org_acronym;
+        } else if (org.name) {
+          // If org has a name property
+          acronym = extractAcronym(org.name);
+        } else {
+          // Fallback for unexpected format
+          acronym = "Unknown";
+        }
+        
+        return <p key={index}>{acronym}</p>;
+      });
+    } else if (typeof adminData.organizations === 'string') {
+      // If it's a comma-separated string of organizations
+      return adminData.organizations.split(',').map((org, index) => {
+        const trimmed = org.trim();
+        return <p key={index}>{extractAcronym(trimmed)}</p>;
+      });
+    } else {
+      // For any other format, try to convert to string
+      return <p>{String(adminData.organizations)}</p>;
+    }
+  };
 
   return (
     <>
@@ -413,7 +462,9 @@ const AdminSidebar = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Organizations</span>
-                <span className="font-medium">{adminData.organizations.map((org) => <p key={org.id}>{org.name}</p>)}</span>
+                <span className="font-medium">
+                  {renderOrganizations()}
+                </span>
               </div>
             </div>
 

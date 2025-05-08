@@ -25,6 +25,8 @@ import EditLiabilityPopup from './components/AdminPortal/EditLiabilityPopup';
 
 import { AuthProvider } from './context/AuthContext';
 
+document.title = "The Harboard University";
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

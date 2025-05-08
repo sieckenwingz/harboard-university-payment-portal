@@ -28,3 +28,12 @@ export const toCamelCase = (obj) => {
   });
   return result;
 };
+
+/**
+ * Returns the acronym of an organization if available, otherwise returns the full name
+ * @param {Object} organization - The organization object with name and org_acronym properties
+ * @returns {string} The organization display text
+ */
+export const getOrganizationDisplay = (organization) => {
+  return organization.org_acronym || organization.name;
+};
