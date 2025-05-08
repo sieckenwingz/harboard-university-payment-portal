@@ -153,7 +153,7 @@ const Notifications = () => {
           {notifications.map((notification) => (
             <div 
               key={notification.id} 
-              className={`relative bg-white rounded-lg shadow p-4 border-l-4 ${notification.read ? 'border-gray-200' : 'border-red-500'} transition-all hover:shadow-md`}
+              className={`relative bg-white rounded-lg shadow p-4 border-l-4 ${notification.read ? 'border-gray-200' : 'border-[#a63f42]'} transition-all hover:shadow-md`}
               onClick={(e) => {
                 // Prevent click if menu was clicked
                 if (e.target.closest('.menu-button') || e.target.closest('.dropdown-menu')) return;
@@ -164,7 +164,7 @@ const Notifications = () => {
                 <div className="flex-1">
                   <h3 className={`font-semibold text-lg ${notification.read ? 'text-gray-700' : 'text-black'}`}>
                     {notification.title}
-                    {!notification.read && <span className="ml-2 bg-red-500 w-2 h-2 rounded-full inline-block"></span>}
+                    {!notification.read && <span className="ml-2 bg-[#a63f42] w-2 h-2 rounded-full inline-block"></span>}
                   </h3>
                   <p className={`mt-1 ${notification.read ? 'text-gray-500' : 'text-gray-800'}`}>{notification.message}</p>
                   <p className="text-xs text-gray-400 mt-2">{formatDate(notification.created_at)}</p>
