@@ -413,7 +413,7 @@ const AdminSidebar = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Organizations</span>
-                <span className="font-medium">{adminData.organizations.map((org) => <p>{org.name}</p>)}</span>
+                <span className="font-medium">{adminData.organizations.map((org) => <p key={org.id}>{org.name}</p>)}</span>
               </div>
             </div>
 
