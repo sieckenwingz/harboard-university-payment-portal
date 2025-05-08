@@ -2,7 +2,8 @@ import React, { useRef } from "react";
 import { X, Download, Printer } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import useUserData from "./hooks/useUserData";
-import { formatDate } from "../../Utils";
+import { formatAmount, formatDate } from "../../Utils";
+import logo from "../../assets/logo.png"; // Import the real logo
 
 const ReceiptViewer = ({ payment, onClose }) => {
   const receiptRef = useRef(null);
@@ -51,10 +52,12 @@ const ReceiptViewer = ({ payment, onClose }) => {
             {/* Receipt Header */}
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-gray-200 mr-3 flex items-center justify-center rounded">
-                  <span className="text-xs text-gray-500">Logo</span>
-                </div>
-                <div className="school-logo text-lg font-bold text-[#a63f42]">
+                <img 
+                  src={logo} 
+                  alt="Harboard University Logo" 
+                  className="w-12 h-12 mr-3 object-contain"
+                />
+                <div className="font-tinos text-lg font-bold text-[#a63f42]">
                   THE HARBOARD UNIVERSITY
                 </div>
               </div>
@@ -102,11 +105,11 @@ const ReceiptViewer = ({ payment, onClose }) => {
                   <tbody>
                     <tr className="border-b border-gray-100">
                       <td className="py-2">{payment.feeName}</td>
-                      <td className="py-2 text-right">₱{payment.amount.toLocaleString()}</td>
+                      <td className="py-2 text-right">{formatAmount(payment.amount)}</td>
                     </tr>
                     <tr>
                       <td className="py-2 font-bold">Total Amount</td>
-                      <td className="py-2 text-right font-bold">₱{payment.amount.toLocaleString()}</td>
+                      <td className="py-2 text-right font-bold">{formatAmount(payment.amount)}</td>
                     </tr>
                   </tbody>
                 </table>
