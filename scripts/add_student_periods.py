@@ -1,19 +1,39 @@
 import os
-from supabase import create_client, Client
+import sys
+from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
+import csv
 
 load_dotenv()
 
-url: str = os.getenv('VITE_SUPABASE_URL')
-key: str = os.getenv('VITE_SUPABASE_ANON_KEY')
+supabase_url: str = os.getenv('VITE_SUPABASE_URL')
+service_role_key: str = os.getenv('SERVICE_ROLE_KEY')
 
-supabase: Client = create_client(url, key)
+supabase = create_client(
+    supabase_url,
+    service_role_key,
+    options=ClientOptions(
+        auto_refresh_token=False,
+        persist_session=False,
+    )
+)
 
-# Students
+# Read CSV
+sr_codes = []
+with open('data/3202/cpe_3202.csv', newline='') as csvfile:
+    reader = csv.DictReader(csvfile)
+    sr_codes = [row['sr_code'] for row in reader]
+
+ans = input(f'Found {len(sr_codes)} sr codes. (y/n): ')
+if ans != 'y':
+    sys.exit()
+
+# Get student ids
 students = (
     supabase.table("students")
-    .select("*")
-    .execute()
+        .select('id')
+        .in_('sr_code', sr_codes)
+        .execute()
 )
 
 student_ids = []
@@ -43,6 +63,8 @@ organization_id = input('Enter organization ID: ')
 periods = (
     supabase.table("periods")
     .select("*")
+    .order("year", desc=False)   # ascending order
+    .order("semester", desc=False)
     .execute()
 )
 

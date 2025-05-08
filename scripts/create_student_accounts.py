@@ -7,7 +7,7 @@ import csv
 load_dotenv()
 
 supabase_url: str = os.getenv('VITE_SUPABASE_URL')
-service_role_key: str = os.getenv('SERVIC_ROLE_KEY')
+service_role_key: str = os.getenv('SERVICE_ROLE_KEY')
 
 supabase = create_client(
     supabase_url,
