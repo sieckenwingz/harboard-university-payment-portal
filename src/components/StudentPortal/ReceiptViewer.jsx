@@ -5,6 +5,170 @@ import useUserData from "./hooks/useUserData";
 import { formatAmount, formatDate } from "../../Utils";
 import logo from "../../assets/logo.png"; // Import the real logo
 
+// Separate function for direct downloading without showing UI
+export const generateAndDownloadReceipt = (payment) => {
+  // Create a temporary div element
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px'; // Position off-screen
+  document.body.appendChild(tempDiv);
+  
+  // Get user data - since we're outside the component, we'll have to pass it in or get it another way
+  // This is a simplified approach as we don't have access to the hook outside the component
+  const userData = JSON.parse(localStorage.getItem('userData')) || {};
+  const fullName = userData.firstName && userData.lastName ? 
+    `${userData.firstName} ${userData.lastName}` : "Student Name";
+  
+  // Render receipt content to the temp div
+  tempDiv.innerHTML = `
+    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+      <!-- Receipt Header -->
+      <div class="flex justify-between items-start mb-4">
+        <div class="flex items-center">
+          <img 
+            src="${logo}" 
+            alt="Harboard University Logo" 
+            class="w-12 h-12 mr-3 object-contain"
+          />
+          <div class="font-tinos text-lg font-bold text-[#a63f42]">
+            THE HARBOARD UNIVERSITY
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="font-bold text-lg">OFFICIAL RECEIPT</p>
+          <p class="text-gray-600 text-sm mt-1">Receipt #: ${payment.receiptNumber}</p>
+          <p class="text-gray-600 text-sm">Date: ${formatDate(payment.approvalDate)}</p>
+        </div>
+      </div>
+      
+      <div class="border-t border-b border-gray-200 py-4 my-4">
+        <!-- Student Information -->
+        <div class="mb-4">
+          <h3 class="font-bold text-gray-700 mb-2 pb-1 border-b text-sm">STUDENT INFORMATION</h3>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p class="text-gray-600">Name:</p>
+              <p class="font-medium">${fullName}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Student ID:</p>
+              <p class="font-medium">${userData?.srCode || "SR-XXXXX"}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Program:</p>
+              <p class="font-medium">Bachelor of Science in Computer Engineering</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Year Level:</p>
+              <p class="font-medium">3rd Year</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Payment Details -->
+        <div class="mb-4">
+          <h3 class="font-bold text-gray-700 mb-2 pb-1 border-b text-sm">PAYMENT DETAILS</h3>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="text-left py-2">Description</th>
+                <th class="text-right py-2">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-gray-100">
+                <td class="py-2">${payment.feeName}</td>
+                <td class="py-2 text-right">${formatAmount(payment.amount)}</td>
+              </tr>
+              <tr>
+                <td class="py-2 font-bold">Total Amount</td>
+                <td class="py-2 text-right font-bold">${formatAmount(payment.amount)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Transaction Information -->
+        <div>
+          <h3 class="font-bold text-gray-700 mb-2 pb-1 border-b text-sm">TRANSACTION INFORMATION</h3>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p class="text-gray-600">Transaction ID:</p>
+              <p class="font-medium">${payment.id}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Payment Date:</p>
+              <p class="font-medium">${formatDate(payment.paymentDate)}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Reference Number:</p>
+              <p class="font-medium">${payment.referenceNumber}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Approved By:</p>
+              <p class="font-medium">${payment.approvedBy}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Approval Date:</p>
+              <p class="font-medium">${formatDate(payment.approvalDate)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Authentication stamp -->
+      <div class="flex justify-between items-center mt-4">
+        <div class="w-1/3">
+          <p class="text-gray-500 text-xs">Processed by:</p>
+          <div class="border-b border-gray-300 mt-8 mb-1"></div>
+          <p class="text-center text-xs">Finance Officer</p>
+        </div>
+        
+        <div class="w-1/3 flex justify-center">
+          <div class="border-2 border-[#a63f42] w-24 h-24 rounded-full flex items-center justify-center rotate-[-15deg]">
+            <p class="text-[#a63f42] font-bold text-center text-xs">
+              PAYMENT<br/>VERIFIED
+            </p>
+          </div>
+        </div>
+        
+        <div class="w-1/3 flex justify-end">
+          <div>
+            <p class="text-gray-500 text-xs">Verified by:</p>
+            <div class="border-b border-gray-300 mt-8 mb-1"></div>
+            <p class="text-center text-xs">Accounting Head</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="mt-8 text-center text-xs text-gray-500 border-t border-gray-200 pt-4">
+        <p>This is an electronically generated receipt and does not require a physical signature.</p>
+        <p>For questions or concerns regarding this receipt, please contact the Finance Office.</p>
+        <p class="font-medium mt-1">Thank you for your payment!</p>
+      </div>
+    </div>
+  `;
+  
+  // Generate and download PDF
+  const opt = {
+    margin: 0.5,
+    filename: `Receipt-${payment.receiptNumber}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+  };
+  
+  html2pdf()
+    .set(opt)
+    .from(tempDiv)
+    .save()
+    .then(() => {
+      // Clean up - remove the temporary div
+      document.body.removeChild(tempDiv);
+    });
+};
+
 const ReceiptViewer = ({ payment, onClose }) => {
   const receiptRef = useRef(null);
   const { userData, getFullName } = useUserData();

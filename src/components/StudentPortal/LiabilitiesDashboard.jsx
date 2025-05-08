@@ -33,7 +33,7 @@ const LiabilitiesDashboard = () => {
 
       const { data: feesData, error: feesError } = await supabase
         .from('student_fees')
-        .select('*, payment_id(*), fee_id(*), student_id(*)')
+        .select('*, payment_id(*), fee_id(*, period_id(*)), student_id(*)')
         .eq('student_id', user.id);
 
       if (feesError) {
@@ -67,38 +67,41 @@ const LiabilitiesDashboard = () => {
     );
   };
 
-  // Update the filteredLiabilities function with proper null checks
-const filteredLiabilities = fees.filter((item) => {
-  // Filter by status (Paid Unpaid Under Review Rejected)
-  if (statusFilter !== "Status" && statusFilter !== item.status) return false;
-  
-  // Filter by search term with null checks
-  if (searchTerm) {
-    const searchTermLower = searchTerm.toLowerCase();
+  // Update the filteredLiabilities function with proper null checks and semester search
+  const filteredLiabilities = fees.filter((item) => {
+    // Filter by status (Paid Unpaid Under Review Rejected)
+    if (statusFilter !== "Status" && statusFilter !== item.status) return false;
     
-    // Check if fee name exists and contains search term
-    const nameMatch = item.feeId?.name ? 
-      item.feeId.name.toLowerCase().includes(searchTermLower) : false;
-    
-    // Check if status exists and contains search term
-    const statusMatch = item.status ? 
-      item.status.toLowerCase().includes(searchTermLower) : false;
-    
-    // Check for amount match - convert to string first
-    const amountMatch = item.feeId?.amount ? 
-      formatAmount(item.feeId.amount).toLowerCase().includes(searchTermLower) : false;
-    
-    // Check for due date match
-    const dueDateMatch = item.feeId?.deadline ? 
-      formatDate(item.feeId.deadline).toLowerCase().includes(searchTermLower) : false;
-    
-    // If none of the fields match, exclude this item
-    if (!nameMatch && !statusMatch && !amountMatch && !dueDateMatch) {
-      return false;
+    // Filter by search term with null checks
+    if (searchTerm) {
+      const searchTermLower = searchTerm.toLowerCase();
+      
+      // Check if fee name exists and contains search term
+      const nameMatch = item.feeId?.name ? 
+        item.feeId.name.toLowerCase().includes(searchTermLower) : false;
+      
+      // Check if status exists and contains search term
+      const statusMatch = item.status ? 
+        item.status.toLowerCase().includes(searchTermLower) : false;
+      
+      // Check for amount match - convert to string first
+      const amountMatch = item.feeId?.amount ? 
+        formatAmount(item.feeId.amount).toLowerCase().includes(searchTermLower) : false;
+      
+      // Check for due date match
+      const dueDateMatch = item.feeId?.deadline ? 
+        formatDate(item.feeId.deadline).toLowerCase().includes(searchTermLower) : false;
+      
+      // Check for semester match from periodId
+      const semesterMatch = getSemesterText(item).toLowerCase().includes(searchTermLower);
+      
+      // If none of the fields match, exclude this item
+      if (!nameMatch && !statusMatch && !amountMatch && !dueDateMatch && !semesterMatch) {
+        return false;
+      }
     }
-  }
-  return true;
-});
+    return true;
+  });
 
   let displayLiabilities = [...filteredLiabilities];
   if (amountFilter === "High to Low") {
@@ -162,6 +165,30 @@ const filteredLiabilities = fees.filter((item) => {
 
   const summary = getSummary();
 
+  // Helper function to get semester display text from periodId
+  const getSemesterText = (fee) => {
+    if (!fee || !fee.feeId) return "N/A";
+    if (typeof fee.feeId !== 'object') return "N/A";
+    
+    // Access period information
+    if (fee.feeId.periodId && typeof fee.feeId.periodId === 'object') {
+      const periodSemester = fee.feeId.periodId.semester;
+      
+      // Format the semester for display
+      if (periodSemester) {
+        // If the semester is stored as an enum or numeric value, format it
+        if (periodSemester === "FIRST") return "First";
+        if (periodSemester === "SECOND") return "Second";
+        if (periodSemester === "SUMMER") return "Summer";
+        
+        // Otherwise, return the semester as is
+        return periodSemester;
+      }
+    }
+    
+    return "N/A";
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div>
@@ -221,8 +248,6 @@ const filteredLiabilities = fees.filter((item) => {
         </div>
       </div>
 
-      {/* Removed filter tabs section */}
-
       <div className="w-full flex items-center mt-6 gap-6 flex-wrap">
         <div className="flex gap-2 items-center">
           <div className="relative">
@@ -277,18 +302,20 @@ const filteredLiabilities = fees.filter((item) => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by fee name, amount, due date..."
+            placeholder="Search by fee name, semester, amount, due date..."
             className="pl-10 pr-4 py-2 border rounded-md text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-[#a63f42] focus:border-transparent transition-all duration-200"
           />
           <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
         </div>
       </div>
 
+      {/* Table Header - Semester column before Amount */}
       <div className="w-full flex justify-between py-4 mt-6 border-b bg-gray-50 px-4 rounded-t-lg">
-        <span style={{ width: "25%" }} className="text-gray-700 font-semibold">FEE NAME</span>
+        <span style={{ width: "20%" }} className="text-gray-700 font-semibold">FEE NAME</span>
+        <span style={{ width: "15%" }} className="text-gray-700 font-semibold">SEMESTER</span>
         <span style={{ width: "15%" }} className="text-gray-700 font-semibold">AMOUNT</span>
-        <span style={{ width: "20%" }} className="text-gray-700 font-semibold">DUE DATE</span>
-        <span style={{ width: "20%" }} className="text-gray-700 font-semibold">STATUS</span>
+        <span style={{ width: "15%" }} className="text-gray-700 font-semibold">DUE DATE</span>
+        <span style={{ width: "15%" }} className="text-gray-700 font-semibold">STATUS</span>
       </div>
 
       {loading ? (
@@ -309,10 +336,14 @@ const filteredLiabilities = fees.filter((item) => {
                 className="w-full flex justify-between py-4 px-4 border-b cursor-pointer hover:bg-gray-50"
                 onClick={() => setSelectedLiability(item)}
               >
-                <span style={{ width: "25%" }} className="text-gray-700 font-medium">{item.feeId.name}</span>
+                <span style={{ width: "20%" }} className="text-gray-700 font-medium">{item.feeId.name}</span>
+                {/* Semester column before Amount */}
+                <span style={{ width: "15%" }} className="text-gray-700">{getSemesterText(item)}</span>
                 <span style={{ width: "15%" }} className="text-gray-700">{formatAmount(item.feeId.amount)}</span>
-                <span style={{ width: "20%" }} className="text-gray-700">{item.feeId ? (item.feeId.deadline != null ? formatDate(item.feeId.deadline) : "No due date")  : "No due date"}</span>
-                <span style={{ width: "20%" }} className="flex items-center">
+                <span style={{ width: "15%" }} className="text-gray-700">
+                  {item.feeId ? (item.feeId.deadline != null ? formatDate(item.feeId.deadline) : "No due date") : "No due date"}
+                </span>
+                <span style={{ width: "15%" }} className="flex items-center">
                   <span 
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm ${statusStyle.bgColor} border ${statusStyle.borderColor}`} 
                     style={{ color: statusStyle.color }}

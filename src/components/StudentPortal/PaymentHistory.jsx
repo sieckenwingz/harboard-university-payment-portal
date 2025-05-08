@@ -14,7 +14,7 @@ import {
   Filter,
   Loader2
 } from "lucide-react";
-import ReceiptViewer from "./ReceiptViewer";
+import ReceiptViewer, { generateAndDownloadReceipt } from "./ReceiptViewer";
 import { formatDate, formatAmount } from '../../Utils';
 import { supabase } from '../../App';
 import { useAuth } from '../../context/AuthContext';
@@ -128,14 +128,8 @@ const PaymentHistory = () => {
   const handleDownloadReceipt = (e, payment) => {
     e.stopPropagation();
     if (payment.status === "Approved") {
-      setSelectedPayment(payment);
-      
-      setShowReceiptViewer(true);
-      
-      setTimeout(() => {
-        const downloadButton = document.querySelector('.receipt-download-button');
-        if (downloadButton) downloadButton.click();
-      }, 100);
+      // Instead of showing the viewer, directly call the download function
+      generateAndDownloadReceipt(payment);
     } else {
       setShowAlertMessage(true);
       setTimeout(() => setShowAlertMessage(false), 3000);
@@ -251,7 +245,7 @@ const PaymentHistory = () => {
       {showAlertMessage && (
         <div className="absolute top-4 right-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 shadow-md flex items-center z-50 animate-fade-in">
           <AlertTriangle size={20} className="mr-2" />
-          <span>Rejected transactions don't have receipts</span>
+          <span>Under review or rejected transactions don't have receipts</span>
         </div>
       )}
       
