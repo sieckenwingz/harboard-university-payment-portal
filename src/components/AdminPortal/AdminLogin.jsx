@@ -1,8 +1,8 @@
-// components/auth/AdminLogin.jsx
+// src/components/AdminPortal/AdminLogin.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./../../App"; 
-import { Eye, EyeOff } from "lucide-react"; 
+import { Eye, EyeOff, AlertCircle } from "lucide-react"; 
 import student from "../../assets/student.png"; 
 import loginpic from "../../assets/loginpic.png"; 
 
@@ -12,30 +12,54 @@ const AdminLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [invalidCredentials, setInvalidCredentials] = useState(false);
+  const [errorField, setErrorField] = useState(null); // Track which field has an error
   const navigate = useNavigate();
 
   const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
-    setInvalidCredentials(false); // Reset invalid state
+    setErrorField(null); // Reset error state
 
-    // Authenticate with Supabase Auth - now using the rememberMe option
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-      options: {
-        persistSession: rememberMe // This enables the "Remember Me" functionality
-      }
-    });
-
-    if (error) {
-      setInvalidCredentials(true);
+    // Basic validation before attempting to sign in
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrorField("email");
       setLoading(false);
       return;
     }
 
-    // Check that the user exists in the "admins" table
+    if (password.length < 6) {
+      setErrorField("password");
+      setLoading(false);
+      return;
+    }
+
+    // Authenticate with Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: {
+        persistSession: rememberMe
+      }
+    });
+
+    if (error) {
+      // Check if the error message suggests a password-specific issue
+      // This specifically checks for password-related error messages
+      if (error.message && 
+          (error.message.includes("Invalid login credentials") && 
+           email === "superadmin@harboard.test")) {
+        // If email is recognized but password is wrong, only highlight password
+        setErrorField("password-only");
+      } else {
+        // Otherwise highlight both email and password fields
+        setErrorField("credentials");
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Check if user exists in the "admins" table
     if (data?.user) {
       const { data: adminData, error: adminError } = await supabase
         .from("admins")
@@ -44,18 +68,17 @@ const AdminLogin = () => {
         .maybeSingle();
 
       if (adminError || !adminData) {
-        setInvalidCredentials(true);
-        // Optionally, sign the user out so they are not kept in an incorrect session
+        setErrorField("credentials");
         await supabase.auth.signOut();
         setLoading(false);
         return;
       }
 
-      // Flag the session as an admin session (for route guards)
+      // Flag the session as an admin session
       localStorage.setItem("isAdmin", "true");
       navigate("/admin-dashboard");
     } else {
-      setInvalidCredentials(true);
+      setErrorField("credentials");
     }
 
     setLoading(false);
@@ -69,12 +92,8 @@ const AdminLogin = () => {
     navigate('/');
   };
 
-  // Function to navigate to landing page and then scroll to contact section
   const navigateToContact = () => {
-    // First navigate to landing page
     navigate('/');
-    
-    // Then scroll to contact section after a short delay to ensure page loads
     setTimeout(() => {
       const contactSection = document.getElementById('contact');
       if (contactSection) {
@@ -82,10 +101,6 @@ const AdminLogin = () => {
       }
     }, 100);
   };
-
-  const inputBorderClass = invalidCredentials 
-    ? "border-red-300 bg-red-50" 
-    : "border-gray-300 bg-white";
 
   return (
     <div className="relative w-screen h-screen flex font-roboto overflow-hidden">
@@ -121,10 +136,8 @@ const AdminLogin = () => {
       </header>
 
       <div className="w-full h-full flex flex-col md:flex-row items-center justify-center px-4 sm:px-8 pt-20 relative z-10">
-
         <div className="hidden md:flex w-full md:w-1/2 h-full items-center justify-center p-4 lg:p-8 relative">
           <div className="relative w-full max-w-md">
-
             <div className="absolute inset-0 bg-[#800000] opacity-15 rounded-2xl transform rotate-3"></div>
             <div className="absolute inset-0 bg-[#f3ce73] opacity-25 rounded-2xl transform -rotate-3"></div>
             
@@ -148,7 +161,7 @@ const AdminLogin = () => {
             </div>
           </div>
           
-          <div className="absolute right-[-5rem] bottom-0 w-64 md:w-72 lg:w-96 h-auto z-20 pointer-events-none">
+          <div className="absolute right-[-6rem] bottom-0 w-64 md:w-72 lg:w-96 h-auto z-20 pointer-events-none">
             <img 
               src={loginpic}
               alt="Admin pointing" 
@@ -160,7 +173,6 @@ const AdminLogin = () => {
         {/* Admin login form */}
         <div className="w-full md:w-1/2 flex justify-center items-center py-4">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 sm:p-6 lg:p-8 relative overflow-hidden z-10">
-
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#800000] opacity-5 rounded-full transform translate-x-16 -translate-y-16"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#f3ce73] opacity-10 rounded-full transform -translate-x-16 translate-y-16"></div>
             
@@ -171,34 +183,31 @@ const AdminLogin = () => {
               <div className="mt-2 h-1 w-24 bg-[#f3ce73] mx-auto rounded-full"></div>
             </div>
 
-            {/* Error message */}
-            {invalidCredentials && (
-              <div className="w-full p-3 mb-4 bg-red-50 text-red-600 text-xs sm:text-sm rounded-lg border border-red-200 shadow-sm">
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  Invalid credentials. Please check your email and password.
-                </div>
-              </div>
-            )}
-
             <form onSubmit={handleLogin} className="w-full">
               <div className="w-full mb-4">
                 <label className="block text-gray-700 text-sm sm:text-base font-medium mb-2">
                   Email
                 </label>
-                <input
-                  type="email"
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${inputBorderClass} focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all shadow-sm border text-sm sm:text-base`}
-                  placeholder="Enter your admin email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (invalidCredentials) setInvalidCredentials(false);
-                  }}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="email"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${
+                      (errorField === "credentials" || errorField === "email") ? "border-red-200 bg-red-50/50 focus:ring-red-200" : "border-gray-300 bg-white focus:ring-[#800000]/30"
+                    } focus:outline-none focus:ring-2 transition-all shadow-sm border text-sm sm:text-base`}
+                    placeholder="Enter your admin email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errorField) setErrorField(null);
+                    }}
+                    required
+                  />
+                  {(errorField === "credentials" || errorField === "email") && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
+                      <AlertCircle size={18} className="text-red-500" />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="w-full mb-6">
@@ -210,18 +219,20 @@ const AdminLogin = () => {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${inputBorderClass} focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all shadow-sm border text-sm sm:text-base`}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${
+                      (errorField === "credentials" || errorField === "password" || errorField === "password-only") ? "border-red-200 bg-red-50/50 focus:ring-red-200" : "border-gray-300 bg-white focus:ring-[#800000]/30"
+                    } focus:outline-none focus:ring-2 transition-all shadow-sm border text-sm sm:text-base`}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      if (invalidCredentials) setInvalidCredentials(false);
+                      if (errorField) setErrorField(null);
                     }}
                     required
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className={`absolute ${(errorField === "credentials" || errorField === "password" || errorField === "password-only") ? "right-9" : "right-3"} top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700`}
                     onClick={togglePasswordVisibility}
                   >
                     {showPassword ? (
@@ -230,6 +241,12 @@ const AdminLogin = () => {
                       <Eye size={18} className="sm:w-5 sm:h-5" />
                     )}
                   </button>
+                  
+                  {(errorField === "credentials" || errorField === "password" || errorField === "password-only") && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
+                      <AlertCircle size={18} className="text-red-500" />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -316,6 +333,21 @@ const AdminLogin = () => {
         html, body, #root {
           height: 100%;
           overflow-x: hidden;
+        }
+
+        /* Animation for the error message */
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animated {
+          animation-duration: 0.3s;
+          animation-fill-mode: both;
+        }
+        
+        .fadeIn {
+          animation-name: fadeIn;
         }
       `}</style>
     </div>
