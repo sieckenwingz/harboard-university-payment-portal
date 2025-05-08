@@ -1,11 +1,10 @@
-// 2nd nav sa liabilities dashboard
-// "college of..." liabilities
-
+// src/components/AdminPortal/OrganizationLiabilities.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Tag } from "lucide-react";
 import { useOrganizationFeesWithPendingCount } from "./hooks/useOrganizationFeesWithPendingCount";
 import { formatAmount } from "../../Utils";
+import { supabase } from "../../App";
 
 const OrganizationLiabilities = () => {
   const { organizationId } = useParams();
@@ -16,6 +15,7 @@ const OrganizationLiabilities = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [searchTerm, setSearchTerm] = useState("");
+  const [unpaidCounts, setUnpaidCounts] = useState({});
 
   const { fees, loading, error } = useOrganizationFeesWithPendingCount(organizationId);
 
@@ -24,7 +24,36 @@ const OrganizationLiabilities = () => {
       navigate("/");
       return;
     }
-  }, [organization, navigate]);
+
+    // New effect to fetch the actual unpaid counts for each fee
+    const fetchUnpaidCounts = async () => {
+      if (!fees.length) return;
+
+      try {
+        // For each fee, count the student_fees with no payment_id
+        const unpaidCountsByFee = {};
+        
+        await Promise.all(fees.map(async (fee) => {
+          const { data, error } = await supabase
+            .from('student_fees')
+            .select('count')
+            .eq('fee_id', fee.id)
+            .is('payment_id', null);
+            
+          if (error) throw error;
+          
+          // The count result is in data[0].count
+          unpaidCountsByFee[fee.id] = data[0]?.count || 0;
+        }));
+        
+        setUnpaidCounts(unpaidCountsByFee);
+      } catch (err) {
+        console.error("Error fetching unpaid counts:", err);
+      }
+    };
+
+    fetchUnpaidCounts();
+  }, [organization, navigate, fees]);
 
   const rowsPerPage = 5;
 
@@ -62,8 +91,15 @@ const OrganizationLiabilities = () => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const currentLiabilities = filteredLiabilities.slice(startIndex, startIndex + rowsPerPage);
 
+  // Get the actual count of pending verifications for all fees
   const getTotalPendingVerifications = () => {
-    return fees.reduce((total, item) => total + item.pendingVerificationFeeCount, 0);
+    return fees.reduce((total, item) => total + (item.pendingVerificationFeeCount || 0), 0);
+  };
+
+  // Get the actual total of unpaid student fees
+  const getTotalUnpaidCount = () => {
+    // Sum up all the unpaid counts from our state
+    return Object.values(unpaidCounts).reduce((sum, count) => sum + (count || 0), 0);
   };
 
   return (
@@ -77,10 +113,10 @@ const OrganizationLiabilities = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {organization?.name} Liabilities
+            {organization?.name} - Liabilities
           </h1>
           <p className="text-gray-600 mt-1">
-            {getTotalPendingVerifications()} pending student payments across {fees.length} liabilities
+            {getTotalPendingVerifications()} pending student payments, {getTotalUnpaidCount()} unpaid across {fees.length} liabilities
           </p>
         </div>
       </div>
@@ -97,7 +133,7 @@ const OrganizationLiabilities = () => {
               <option>School Fees</option>
               <option>Membership Fees</option>
             </select>
-            <Filter className="absolute left-2 top-2.5 text-gray-500" size={18} />
+            <Tag className="absolute left-2 top-2.5 text-gray-500" size={18} />
             <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />
           </div>
         </div>
@@ -132,6 +168,9 @@ const OrganizationLiabilities = () => {
       ) : (
         <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
           {currentLiabilities.map((item) => {
+            // Use our unpaidCounts state to show the actual unpaid count
+            const unpaidCount = unpaidCounts[item.id] || 0;
+            
             return (
               <div
                 key={item.id}
@@ -142,7 +181,8 @@ const OrganizationLiabilities = () => {
                 <span style={{ width: "15%" }} className="text-gray-600">{formatAmount(item.amount)}</span>
                 <span style={{ width: "20%" }}>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-orange-100 border border-orange-300 text-orange-700">
-                    {item.pendingVerificationFeeCount} pending students
+                    {/* Show actual unpaid count instead of all tagged students */}
+                    {unpaidCount} unpaid students
                   </span>
                 </span>
                 <span style={{ width: "20%" }} className="text-gray-600">{item.formattedDeadline}</span>

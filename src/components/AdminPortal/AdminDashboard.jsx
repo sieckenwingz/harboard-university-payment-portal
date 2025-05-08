@@ -5,7 +5,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Search, Filter, Users, Clock, C
 import ViewDetailsPopup from "./ViewDetailsPopup"; 
 import { supabase } from "../../App";
 import { useOrganizationsWithFeeCount } from "./hooks/useOrganizationsWithFeeCount";
-import { parseStatus } from "../../models/Status";
+import { parseStatus, Status } from "../../models/Status";
 import { AcademicYear, parseAcademicYear, parseSemester } from "../../models/Period";
 import { getEnumKeyByValue } from "../../helpers/EnumHelpers";
 
@@ -17,6 +17,16 @@ const AdminDashboard = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState(null); 
   const { organizations, loading, error } = useOrganizationsWithFeeCount();
+
+  // UPDATED: Logic to correctly count unsettled fees
+  const getUnpaidCount = (orgId) => {
+    // Find the organization with the given ID
+    const org = organizations.find(org => org.id === orgId);
+    
+    // Return the unsettledFeeCount from the organization data
+    // This should represent only the unpaid fees, not all tagged students
+    return org ? org.unsettledFeeCount : 0;
+  };
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
@@ -56,9 +66,6 @@ const AdminDashboard = () => {
   };
 
   const filteredOrganizations = organizations.filter((item) => {
-    // Add debugging to see what's happening
-    // console.log("Item:", item.name, "Pending:", item.pendingFeeCount, "Filter:", statusFilter);
-
     // If all orgs have pendingFeeCount < 10, they'd all be "Low Priority"
     if (statusFilter === "High Priority" && item.pendingVerificationFeeCount < 20) {
       return false;
@@ -246,6 +253,7 @@ const AdminDashboard = () => {
                   style={{ color: priorityStyle.color }}
                   >
                   {priorityStyle.icon}
+                  {/* UPDATED: Display the actually unpaid/unsettled count, not total students */}
                   {item.unsettledFeeCount} unsettled
                 </span>
                 </span>
