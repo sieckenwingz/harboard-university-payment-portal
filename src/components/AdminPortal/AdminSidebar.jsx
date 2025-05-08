@@ -30,7 +30,7 @@ const AdminSidebar = () => {
     id: "",
     name: "Loading...",
     position: "Administrator",
-    organization: "Student Affairs Office",
+    organizations: "Student Affairs Office",
     avatar: "A" 
   });
   const [loading, setLoading] = useState(true);
@@ -43,6 +43,10 @@ const AdminSidebar = () => {
   const toggleUserProfile = () => {
     setShowUserProfile(!showUserProfile);
   };
+
+  useEffect(() => {
+    console.log(adminData)
+  }, [adminData])
 
   // Fetch admin data and profile image on component mount
   useEffect(() => {
@@ -59,8 +63,8 @@ const AdminSidebar = () => {
         
         // Get the admin record using the auth user ID
         const { data, error } = await supabase
-          .from('admins')
-          .select('id, first_name, last_name')
+          .from('admins_with_organizations')
+          .select('*')
           .eq('id', user.id)
           .single();
         
@@ -75,7 +79,8 @@ const AdminSidebar = () => {
             ...adminData,
             id: data.id,
             name: `${data.first_name} ${data.last_name}`,
-            avatar: data.first_name.charAt(0) || "A"
+            avatar: data.first_name.charAt(0) || "A",
+            organizations: data.organizations
           });
           
           // Fetch profile image - with more precise matching
@@ -407,8 +412,8 @@ const AdminSidebar = () => {
                 <span className="font-medium">{adminData.position}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Organization</span>
-                <span className="font-medium">{adminData.organization}</span>
+                <span className="text-gray-500">Organizations</span>
+                <span className="font-medium">{adminData.organizations.map((org) => <p>{org.name}</p>)}</span>
               </div>
             </div>
 
