@@ -1,4 +1,4 @@
-// hooks/useOrganizationsWithFeeCount.js
+// hooks/usePeriods.ts
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../App';
 import { AcademicYear, Period } from '../../../models/Period';
