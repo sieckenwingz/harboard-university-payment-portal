@@ -6,18 +6,14 @@ import { formatAmount, formatDate } from "../../Utils";
 import logo from "../../assets/logo.png"; // Import the real logo
 
 // Separate function for direct downloading without showing UI
-export const generateAndDownloadReceipt = (payment) => {
-  // Create a temporary div element
+export const generateAndDownloadReceipt = (payment, userData) => {
+  // Create a temporary div element (but don't append to DOM)
   const tempDiv = document.createElement('div');
-  tempDiv.style.position = 'absolute';
-  tempDiv.style.left = '-9999px'; // Position off-screen
-  document.body.appendChild(tempDiv);
   
-  // Get user data - since we're outside the component, we'll have to pass it in or get it another way
-  // This is a simplified approach as we don't have access to the hook outside the component
-  const userData = JSON.parse(localStorage.getItem('userData')) || {};
-  const fullName = userData.firstName && userData.lastName ? 
+  // Use userData parameter or fallback
+  const fullName = userData?.firstName && userData?.lastName ? 
     `${userData.firstName} ${userData.lastName}` : "Student Name";
+  const srCode = userData?.srCode || "SR-XXXXX";
   
   // Render receipt content to the temp div
   tempDiv.innerHTML = `
@@ -52,7 +48,7 @@ export const generateAndDownloadReceipt = (payment) => {
             </div>
             <div>
               <p class="text-gray-600">Student ID:</p>
-              <p class="font-medium">${userData?.srCode || "SR-XXXXX"}</p>
+              <p class="font-medium">${srCode}</p>
             </div>
             <div>
               <p class="text-gray-600">Program:</p>
@@ -159,14 +155,25 @@ export const generateAndDownloadReceipt = (payment) => {
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
   };
   
-  html2pdf()
-    .set(opt)
-    .from(tempDiv)
-    .save()
-    .then(() => {
-      // Clean up - remove the temporary div
-      document.body.removeChild(tempDiv);
-    });
+  try {
+    html2pdf()
+      .set(opt)
+      .from(tempDiv)
+      .save()
+      .then(() => {
+        // Clean up - remove the temporary div
+        document.body.removeChild(tempDiv);
+      })
+      .catch(error => {
+        console.error("Error generating PDF:", error);
+        // Still try to remove the temp div
+        document.body.removeChild(tempDiv);
+      });
+  } catch (error) {
+    console.error("Error with html2pdf:", error);
+    // Make sure we always clean up
+    document.body.removeChild(tempDiv);
+  }
 };
 
 const ReceiptViewer = ({ payment, onClose }) => {
@@ -176,16 +183,20 @@ const ReceiptViewer = ({ payment, onClose }) => {
   
   // download receipt as pdf
   const handleDownload = () => {
-    const element = receiptRef.current;
-    const opt = {
-      margin: 0.5,
-      filename: `Receipt-${payment.receiptNumber}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-    
-    html2pdf().set(opt).from(element).save();
+    try {
+      const element = receiptRef.current;
+      const opt = {
+        margin: 0.5,
+        filename: `Receipt-${payment.receiptNumber}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      
+      html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+    }
   };
   
   return (

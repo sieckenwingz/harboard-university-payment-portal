@@ -18,9 +18,11 @@ import ReceiptViewer, { generateAndDownloadReceipt } from "./ReceiptViewer";
 import { formatDate, formatAmount } from '../../Utils';
 import { supabase } from '../../App';
 import { useAuth } from '../../context/AuthContext';
+import useUserData from './hooks/useUserData';
 
 const PaymentHistory = () => {
   const { user } = useAuth();
+  const { userData, getFullName } = useUserData(); // Use the hook to get user data
   const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState("All time");
   const [searchTerm, setSearchTerm] = useState("");
@@ -125,11 +127,11 @@ const PaymentHistory = () => {
     }
   };
   
-  const handleDownloadReceipt = (e, payment) => {
+  const handleDownload = (e, payment) => {
     e.stopPropagation();
     if (payment.status === "Approved") {
-      // Instead of showing the viewer, directly call the download function
-      generateAndDownloadReceipt(payment);
+      // Pass userData directly to the function
+      generateAndDownloadReceipt(payment, userData);
     } else {
       setShowAlertMessage(true);
       setTimeout(() => setShowAlertMessage(false), 3000);
@@ -423,7 +425,7 @@ const PaymentHistory = () => {
                     <Eye size={18} />
                   </button>
                   <button
-                    onClick={(e) => handleDownloadReceipt(e, payment)}
+                    onClick={(e) => handleDownload(e, payment)}
                     className={`p-2 rounded-full ${payment.status === "Approved" ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-400"} transition-colors`}
                     title="Download Receipt as PDF"
                   >
