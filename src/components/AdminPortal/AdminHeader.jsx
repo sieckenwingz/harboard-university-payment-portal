@@ -7,11 +7,20 @@ const AdminHeader = () => {
   const navigate = useNavigate();
 
   const handleHeaderClick = async () => {
-    // Sign out the user and then navigate to landing page
-    await supabase.auth.signOut();
-    // Also clear the admin flag
-    localStorage.removeItem("isAdmin");
-    navigate("/");
+    try {
+      // Sign out the user
+      await supabase.auth.signOut();
+      
+      // Also clear the admin flag
+      localStorage.removeItem("isAdmin");
+      
+      // Force a complete page reload and redirect to landing page
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error during header click:", error);
+      // Fallback in case of error
+      navigate('/');
+    }
   };
 
   return (
