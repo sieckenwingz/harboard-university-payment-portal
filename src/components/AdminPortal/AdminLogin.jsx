@@ -20,10 +20,13 @@ const AdminLogin = () => {
     setLoading(true);
     setInvalidCredentials(false); // Reset invalid state
 
-    // Authenticate with Supabase Auth
+    // Authenticate with Supabase Auth - now using the rememberMe option
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        persistSession: rememberMe // This enables the "Remember Me" functionality
+      }
     });
 
     if (error) {
@@ -64,6 +67,20 @@ const AdminLogin = () => {
   
   const navigateToLanding = () => {
     navigate('/');
+  };
+
+  // Function to navigate to landing page and then scroll to contact section
+  const navigateToContact = () => {
+    // First navigate to landing page
+    navigate('/');
+    
+    // Then scroll to contact section after a short delay to ensure page loads
+    setTimeout(() => {
+      const contactSection = document.getElementById('contact');
+      if (contactSection) {
+        contactSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   const inputBorderClass = invalidCredentials 
@@ -248,7 +265,12 @@ const AdminLogin = () => {
               
               <div className="text-center mt-6 text-sm sm:text-base">
                 <span className="text-gray-600">Need help? </span>
-                <a href="#" className="text-[#800000] hover:underline font-medium">Contact Support</a>
+                <button 
+                  onClick={navigateToContact}
+                  className="text-[#800000] hover:underline font-medium bg-transparent border-none cursor-pointer"
+                >
+                  Contact Support
+                </button>
               </div>
             </form>
           </div>
