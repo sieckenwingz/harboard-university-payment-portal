@@ -5,6 +5,7 @@ import student1 from "../../assets/student1.png";
 import student from "../../assets/student.png";
 import student4 from "../../assets/student4.png";
 import { Clock, Bell, FileText, Smartphone, Clock3, Shield, PhilippinePeso, Menu, X } from "lucide-react";
+import TermsPrivacyModal from "./TermsPrivacyModal"; // Import the TermsPrivacyModal component
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 }, 
@@ -122,6 +123,7 @@ export default function LandingPage() {
   const [activeSection, setActiveSection] = useState("home");
   const [isScrolling, setIsScrolling] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false); // State for terms modal visibility
 
   const homeRef = useRef(null);
   const servicesRef = useRef(null);
@@ -238,6 +240,11 @@ export default function LandingPage() {
       icon: <Shield size={24} className="text-[#002cb8]" />
     }
   ];
+
+  // Function to open the terms modal
+  const openTermsModal = () => {
+    setShowTermsModal(true);
+  };
 
   return (
     <div className="bg-white font-roboto">
@@ -632,8 +639,14 @@ export default function LandingPage() {
             <div>
               <h4 className="text-lg font-medium mb-4">Legal</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="hover:text-[#800000]">Terms</a></li>
-                <li><a href="#" className="hover:text-[#800000]">Privacy</a></li>
+                <li>
+                  <button 
+                    onClick={openTermsModal} 
+                    className="hover:text-[#800000] cursor-pointer"
+                  >
+                    Terms & Privacy
+                  </button>
+                </li>
               </ul>
             </div>
             
@@ -651,6 +664,12 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Terms and Privacy Policy Modal */}
+      <TermsPrivacyModal 
+        show={showTermsModal} 
+        onClose={() => setShowTermsModal(false)} 
+      />
     </div>
   );
 }
