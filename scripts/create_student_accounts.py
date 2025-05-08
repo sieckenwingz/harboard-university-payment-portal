@@ -35,6 +35,10 @@ for user in users:
             {
                 "email": f"{user['sr_code']}@g.batstate-u.edu.ph", 
                 "password": user['sr_code'],
+                "email_confirm": True,
+                "user_metadata": {
+                    "email_verified": True
+                }
             }
         )
 
