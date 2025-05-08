@@ -1,8 +1,8 @@
-// src/components/StudentPortal/StudentLogin.jsx
+// components/auth/StudentLogin.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./../../App";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import student from "../../assets/student.png";
 import loginpic from "../../assets/loginpic.png";
 
@@ -12,78 +12,127 @@ const StudentLogin = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errorField, setErrorField] = useState(null); // Track which field has an error
   const navigate = useNavigate();
   
+  // Simple error state management
+  const [errors, setErrors] = useState({
+    email: "",
+    password: ""
+  });
+  
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = { email: "", password: "" };
+    
+    // Email validation
+    if (!email) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Please enter a valid email address";
+      isValid = false;
+    }
+    
+    // Password validation
+    if (!password) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleLogin = async (event) => {
     event.preventDefault();
-    setLoading(true);
-    setErrorField(null);
-
-    // Basic validation before attempting to sign in
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setErrorField("email");
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorField("password");
-      setLoading(false);
-      return;
-    }
-
-    // First, check if the email exists in the students table
-    // This is to determine if we should show error on email or password field
-    const { data: emailCheck, error: emailCheckError } = await supabase
-      .from("students")
-      .select("email")
-      .eq("email", email)
-      .single();
-
-    // If we found the email in the database, that means it's a valid student email
-    const emailExists = !emailCheckError && emailCheck;
-
-    // Now try to login
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-      options: {
-        persistSession: rememberMe
-      }
-    });
     
-    if (error) {
-      // If email exists but login failed, it must be a password issue
-      if (emailExists) {
-        setErrorField("password-only");
-      } else {
-        // Email doesn't exist or other error, highlight both fields
-        setErrorField("credentials");
-      }
-      setLoading(false);
+    // Validate form before submission
+    if (!validateForm()) {
       return;
     }
+    
+    setLoading(true);
+    
+    // Reset all errors
+    setErrors({ email: "", password: "" });
 
-    if (data?.user) {
-      const { data: studentData, error: studentError } = await supabase
-        .from("students")
-        .select("*")
-        .eq("id", data.user.id)
-        .maybeSingle();
-
-      if (studentError || !studentData) {
-        setErrorField("credentials");
-        await supabase.auth.signOut();
+    try {
+      // Attempt to sign in directly - we'll use this to check both email existence and password correctness
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+        options: {
+          persistSession: rememberMe
+        }
+      });
+      
+      // Debug: Log the error message to see what Supabase returns
+      console.log("Auth error:", error?.message);
+      
+      if (error) {
+        // Handle different error scenarios
+        if (error.message.includes("Invalid login credentials")) {
+          // Check if the email exists by trying to reset password
+          const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/reset-password',
+          });
+          
+          console.log("Reset error:", resetError?.message);
+          
+          // If reset password gives "user not found" error, the email doesn't exist
+          if (resetError && (resetError.message.includes("user not found") || 
+                             resetError.message.toLowerCase().includes("not found") || 
+                             resetError.message.includes("Invalid"))) {
+            setErrors({...errors, email: "Email not registered"});
+          } else {
+            // Otherwise, the email exists but password is wrong
+            setErrors({...errors, password: "Invalid password"});
+          }
+        } else if (error.message.includes("user not found") || 
+                  error.message.toLowerCase().includes("not found") || 
+                  error.message.includes("user") || 
+                  error.message.includes("Invalid")) {
+          setErrors({...errors, email: "Email not registered"});
+        } else if (error.message.includes("Email not confirmed")) {
+          setErrors({...errors, email: "Email not verified. Please check your inbox."});
+        } else if (error.message.includes("rate limit")) {
+          setErrors({...errors, password: "Too many login attempts. Try again later."});
+        } else {
+          // Generic error - attach to password field as default
+          setErrors({...errors, password: "Login failed. Please try again."});
+        }
+        
         setLoading(false);
         return;
       }
-      navigate("/dashboard");
-    } else {
-      setErrorField("credentials");
+
+      if (data?.user) {
+        // Check if the user has a student profile
+        const { data: studentData, error: studentError } = await supabase
+          .from("students")
+          .select("*")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        if (studentError || !studentData) {
+          setErrors({...errors, email: "No student account found for this user"});
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
+        
+        // Successful login
+        if (rememberMe) {
+          localStorage.setItem("userEmail", email);
+        }
+        
+        navigate("/dashboard");
+      }
+    } catch (e) {
+      console.error("Unexpected error:", e);
+      setErrors({...errors, password: "An unexpected error occurred"});
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const togglePasswordVisibility = () => {
@@ -94,14 +143,32 @@ const StudentLogin = () => {
     navigate('/');
   };
 
+  // Function to navigate to landing page and then scroll to contact section
   const navigateToContact = () => {
+    // First navigate to landing page
     navigate('/');
+    
+    // Then scroll to contact section after a short delay to ensure page loads
     setTimeout(() => {
       const contactSection = document.getElementById('contact');
       if (contactSection) {
         contactSection.scrollIntoView({ behavior: 'smooth' });
       }
     }, 100);
+  };
+
+  const clearError = (field) => {
+    setErrors({
+      ...errors,
+      [field]: ""
+    });
+  };
+
+  // Helper function to determine input border class based on error state
+  const getInputBorderClass = (field) => {
+    return errors[field] 
+      ? "border-red-300 bg-red-50" 
+      : "border-gray-300 bg-white";
   };
 
   return (
@@ -197,23 +264,21 @@ const StudentLogin = () => {
                 <div className="relative">
                   <input
                     type="email"
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${
-                      (errorField === "credentials" || errorField === "email") ? "border-red-200 bg-red-50/50 focus:ring-red-200" : "border-gray-300 bg-white focus:ring-[#800000]/30"
-                    } focus:outline-none focus:ring-2 transition-all shadow-sm border text-sm sm:text-base`}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${getInputBorderClass('email')} focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all shadow-sm border text-sm sm:text-base`}
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
-                      if (errorField) setErrorField(null);
+                      clearError('email');
                     }}
-                    required
                   />
-                  {(errorField === "credentials" || errorField === "email") && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
-                      <AlertCircle size={18} className="text-red-500" />
-                    </div>
-                  )}
                 </div>
+                {/* Email error message - shown below field */}
+                {errors.email && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               <div className="w-full mb-6">
@@ -225,20 +290,17 @@ const StudentLogin = () => {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${
-                      (errorField === "credentials" || errorField === "password" || errorField === "password-only") ? "border-red-200 bg-red-50/50 focus:ring-red-200" : "border-gray-300 bg-white focus:ring-[#800000]/30"
-                    } focus:outline-none focus:ring-2 transition-all shadow-sm border text-sm sm:text-base`}
+                    className={`w-full pl-3 sm:pl-4 pr-10 py-2 sm:py-3 rounded-lg ${getInputBorderClass('password')} focus:outline-none focus:ring-2 focus:ring-[#800000]/30 transition-all shadow-sm border text-sm sm:text-base`}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      if (errorField) setErrorField(null);
+                      clearError('password');
                     }}
-                    required
                   />
                   <button
                     type="button"
-                    className={`absolute ${(errorField === "credentials" || errorField === "password" || errorField === "password-only") ? "right-9" : "right-3"} top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700`}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                     onClick={togglePasswordVisibility}
                   >
                     {showPassword ? (
@@ -247,13 +309,13 @@ const StudentLogin = () => {
                       <Eye size={18} className="sm:w-5 sm:h-5" />
                     )}
                   </button>
-                  
-                  {(errorField === "credentials" || errorField === "password" || errorField === "password-only") && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
-                      <AlertCircle size={18} className="text-red-500" />
-                    </div>
-                  )}
                 </div>
+                {/* Password error message - shown below field */}
+                {errors.password && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.password}
+                  </p>
+                )}
               </div>
 
               <div className="w-full mb-6 flex items-center text-sm sm:text-base">
@@ -339,21 +401,6 @@ const StudentLogin = () => {
         html, body, #root {
           height: 100%;
           overflow-x: hidden;
-        }
-
-        /* Animation for the error message */
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-5px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animated {
-          animation-duration: 0.3s;
-          animation-fill-mode: both;
-        }
-        
-        .fadeIn {
-          animation-name: fadeIn;
         }
       `}</style>
     </div>
