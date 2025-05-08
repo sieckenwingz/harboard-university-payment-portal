@@ -149,7 +149,7 @@ const PaymentReceiptModal = ({
               <button 
                 onClick={() => onReject(studentFee.id)}
                 className="px-4 py-2 text-white rounded-md hover:opacity-90"
-                style={{ backgroundColor: "#CA797C" }}
+                style={{ backgroundColor: "#800000" }}
               >
                 Reject
               </button>
@@ -159,7 +159,7 @@ const PaymentReceiptModal = ({
               <button 
                 onClick={() => onConfirm(studentFee.id)}
                 className="px-4 py-2 text-white rounded-md hover:opacity-90"
-                style={{ backgroundColor: "#90D18A", color: "#000" }}
+                style={{ backgroundColor: "#f3ce73", color: "#000" }}
               >
                 Confirm
               </button>
