@@ -187,12 +187,17 @@ const StudentPayments = () => {
     }
     
     return activeData.filter((student) => {
-      if (searchTerm && 
-        !student.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !student.srCode.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !student.referenceNo.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm) {
+      const studentName = `${student.studentId.first_name} ${student.studentId.getFullName()}`.toLowerCase();
+      const srCode = student.studentId.srCode ? student.studentId.srCode.toLowerCase() : '';
+      const referenceNo = student.paymentId?.refNo ? student.paymentId.refNo.toLowerCase() : '';
+      
+      if (!studentName.includes(searchTerm.toLowerCase()) && 
+          !srCode.includes(searchTerm.toLowerCase()) && 
+          !referenceNo.includes(searchTerm.toLowerCase())) {
         return false;
       }
+    }
       
       if (activeTab === "pending" && parseResults.matched.length > 0) {
         const isMatched = parseResults.matched.some(s => s.id === student.id);
