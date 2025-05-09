@@ -265,7 +265,7 @@ const StudentPayments = () => {
             <button
               disabled={pendingStudentFees.length == 0}
               onClick={handleUploadClick}
-              className="flex items-center px-4 py-2 bg-[#a63f42] text-white rounded-md hover:bg-[#8a3538] transition-colors"
+              className={pendingStudentFees.length == 0 ? "flex items-center px-4 py-2 bg-gray-300 text-gray-100 rounded-md" : "flex items-center px-4 py-2 bg-[#a63f42] text-white rounded-md hover:bg-[#8a3538] transition-colors"}
             >
               <Upload size={16} className="mr-2" />
               Upload GCash History
