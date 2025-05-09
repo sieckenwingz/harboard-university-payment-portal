@@ -67,16 +67,16 @@ const AdminDashboard = () => {
 
   const filteredOrganizations = organizations.filter((item) => {
     // If all orgs have pendingFeeCount < 10, they'd all be "Low Priority"
-    if (statusFilter === "High Priority" && item.pendingVerificationFeeCount < 20) {
+    if (statusFilter === "High Priority" && item.unsettledFeeCount < 20) {
       return false;
     }
     
     if (statusFilter === "Medium Priority" && 
-       (item.pendingVerificationFeeCount < 10 || item.pendingVerificationFeeCount >= 20)) {
+       (item.unsettledFeeCount < 10 || item.unsettledFeeCount >= 20)) {
       return false;
     }
     
-    if (statusFilter === "Low Priority" && item.pendingVerificationFeeCount >= 10) {
+    if (statusFilter === "Low Priority" && item.unsettledFeeCount >= 10) {
       return false;
     }
     
@@ -94,8 +94,8 @@ const AdminDashboard = () => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const currentOrganizations = displayOrganizations.slice(startIndex, startIndex + rowsPerPage);
 
-  const getPriorityStyle = (pendingCount) => {
-    if (pendingCount >= 20) {
+  const getPriorityStyle = (unsettledCount) => {
+    if (unsettledCount >= 20) {
       return { 
         color: "#e53e3e", 
         icon: <AlertTriangle size={16} className="mr-1" />, 
@@ -103,7 +103,7 @@ const AdminDashboard = () => {
         borderColor: "border-red-300",
         label: "High Priority"
       };
-    } else if (pendingCount >= 10) {
+    } else if (unsettledCount >= 10) {
       return { 
         color: "#dd6b20", 
         icon: <RefreshCw size={16} className="mr-1" />, 
@@ -124,9 +124,9 @@ const AdminDashboard = () => {
 
   const getSummary = () => {
     const academic = organizations.length;
-    const highPriority = organizations.filter(item => item.pendingVerificationFeeCount >= 20).length;
-    const mediumPriority = organizations.filter(item => item.pendingVerificationFeeCount >= 10 && item.pendingVerificationFeeCount < 20).length;
-    const lowPriority = organizations.filter(item => item.pendingVerificationFeeCount < 10).length;
+    const highPriority = organizations.filter(item => item.unsettledFeeCount >= 20).length;
+    const mediumPriority = organizations.filter(item => item.unsettledFeeCount >= 10 && item.unsettledFeeCount < 20).length;
+    const lowPriority = organizations.filter(item => item.unsettledFeeCount < 10).length;
     
     return { academic, highPriority, mediumPriority, lowPriority };
   };
@@ -239,7 +239,7 @@ const AdminDashboard = () => {
       ) : (
         <div className="w-full flex flex-col rounded-b-lg overflow-hidden shadow-sm border border-gray-200">
           {currentOrganizations.map((item) => {
-            const priorityStyle = getPriorityStyle(item.pendingVerificationFeeCount);
+            const priorityStyle = getPriorityStyle(item.unsettledFeeCount); // show unsettled students instead na pending liab
             return (
               <div
                 key={item.id}
