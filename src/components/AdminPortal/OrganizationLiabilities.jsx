@@ -38,6 +38,7 @@ const OrganizationLiabilities = () => {
   }, [periods]);
 
   useEffect(() => {
+    console.log(fees);
     if (!organization) {
       navigate("/");
       return;
@@ -326,7 +327,7 @@ const OrganizationLiabilities = () => {
             const unpaidCount = unpaidCounts[item.id] || 0;
             const semester = getSemester(item);
             const gcashNumber = getGCashNumber(item);
-            const academicYear = item.academicYear || item.academic_year || item.period?.academicYear || "N/A";
+            const academicYear = periods.find((p, i) => p.id == item.periodId).year;
             
             return (
               <div
