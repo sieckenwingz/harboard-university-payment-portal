@@ -356,12 +356,20 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
                     {selectedLiability?.feeId.accountNumber}
                   </div>
                   
+                  <div className="text-black text-base font-semibold">Fee amount:</div>
+                  <div className="text-black text-base font-normal truncate" title={selectedLiability?.feeId.accountNumber}>
+                    {formatAmount(selectedLiability?.feeId.amount)}
+                  </div>
+
+                  <hr style={{ margin: '20px 0', borderColor: '#ccc' }} />
+                  <hr style={{ margin: '20px 0', borderColor: '#ccc' }} />
+                  
                   <div className="text-black text-base font-semibold">Reference Number:</div>
                   <div className="text-black text-base font-normal truncate" title={refNoEdit}>
                     {refNoEdit}
                   </div>
                   
-                  <div className="text-black text-base font-semibold">Amount:</div>
+                  <div className="text-black text-base font-semibold">Amount paid:</div>
                   <div className="text-black text-base font-normal truncate" title={formatAmount(amountEdit || selectedLiability?.feeId?.amount)}>
                     {formatAmount(amountEdit || selectedLiability?.feeId?.amount)}
                   </div>
@@ -426,7 +434,15 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
                   </button>
                   
                   <button 
-                    onClick={handleConfirmReceipt} 
+                    onClick={() => {
+                      if (selectedLiability.amount != amountEdit) {
+                        let ans = confirm('The fee amount does not match the amount paid. Comfirm anyway?');
+                        if (!ans) {
+                          return;
+                        }
+                      }
+                      handleConfirmReceipt();
+                    }} 
                     className="w-[143px] h-[46px] bg-yellow rounded-lg flex items-center justify-center text-black text-base font-normal transition-all duration-200 hover:bg-yellow-400 hover:shadow-md"
                     style={{ transition: "all 0.2s ease" }}
                     disabled={loading}
