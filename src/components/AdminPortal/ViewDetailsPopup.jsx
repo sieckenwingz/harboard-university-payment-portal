@@ -1,5 +1,5 @@
 import React from "react";
-import { X, CheckCircle, AlertTriangle, Calendar, Clock, RefreshCw } from "lucide-react";
+import { X, CheckCircle, AlertTriangle, Clock, RefreshCw } from "lucide-react";
 import { formatDate } from "../../Utils";
 
 const ViewDetailsPopup = ({ show, organizationData, onClose, onDataChange }) => {
@@ -7,14 +7,14 @@ const ViewDetailsPopup = ({ show, organizationData, onClose, onDataChange }) => 
     return null;
   }
 
-  const getPriorityLabel = (pendingCount) => {
-    if (pendingCount >= 20) {
+  const getPriorityLabel = (unsettledCount) => {
+    if (unsettledCount >= 20) {
       return {
         label: "High Priority",
         icon: <AlertTriangle size={16} className="mr-1" />,
         color: "text-red-600"
       };
-    } else if (pendingCount >= 10) {
+    } else if (unsettledCount >= 10) {
       return {
         label: "Medium Priority",
         icon: <RefreshCw size={16} className="mr-1" />,
@@ -29,7 +29,7 @@ const ViewDetailsPopup = ({ show, organizationData, onClose, onDataChange }) => 
     }
   };
 
-  const priorityInfo = getPriorityLabel(organizationData.pendingVerifications);
+  const priorityInfo = getPriorityLabel(organizationData.unsettledFeeCount);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
@@ -51,45 +51,37 @@ const ViewDetailsPopup = ({ show, organizationData, onClose, onDataChange }) => 
             <h3 className="text-lg font-semibold text-gray-800 mb-3">
               {organizationData.name}
             </h3>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <Calendar size={18} className="text-gray-500 mr-2" />
-                <span className="text-gray-700">
-                  Last Updated: {formatDate(organizationData.lastUpdate)}
-                </span>
-              </div>
-              <div className="flex items-center">
-                <Clock size={18} className="text-gray-500 mr-2" />
-                <span className="text-gray-700">
-                  Type: {organizationData.type}
-                </span>
-              </div>
+            <div className="flex items-center">
+              <Clock size={18} className="text-gray-500 mr-2" />
+              <span className="text-gray-700">
+                Type: {organizationData.type || "Academic"}
+              </span>
             </div>
           </div>
 
           <div className="bg-gray-50 p-4 rounded-lg mb-4">
             <h4 className="font-semibold text-gray-700 mb-2">
-              Verification Status
+              Fee Status
             </h4>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-600">Pending:</span>
+              <span className="text-gray-600">Unsettled Fees:</span>
               <span className="font-semibold text-gray-800">
-                {organizationData.pendingVerifications}
+                {organizationData.unsettledFeeCount}
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
               <div
                 className={`h-2.5 rounded-full ${
-                  organizationData.pendingVerifications >= 20
+                  organizationData.unsettledFeeCount >= 20
                     ? "bg-red-500"
-                    : organizationData.pendingVerifications >= 10
+                    : organizationData.unsettledFeeCount >= 10
                     ? "bg-orange-500"
                     : "bg-green-500"
                 }`}
                 style={{
                   width: `${Math.min(
                     100,
-                    (organizationData.pendingVerifications / 30) * 100
+                    (organizationData.unsettledFeeCount / 30) * 100
                   )}%`,
                 }}
               ></div>
