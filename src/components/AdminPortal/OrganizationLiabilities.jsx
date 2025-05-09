@@ -216,7 +216,7 @@ const OrganizationLiabilities = () => {
   // Safely filter liabilities with null checks
   const filteredLiabilities = (fees || []).filter((item) => {
     // filter by category
-    if (categoryFilter !== "All Categories" && item.category !== categoryFilter) return false;
+    
     
     // filter by search term with null checks
     if (searchTerm && searchTerm.trim() !== "") {
@@ -269,6 +269,7 @@ const OrganizationLiabilities = () => {
       </div>
 
       <div className="w-full flex items-center mt-6 gap-6 flex-wrap">
+        {/* removed filtering ng membership fees/school 
         <div className="flex gap-2 items-center">
           <div className="relative">
             <select
@@ -284,6 +285,7 @@ const OrganizationLiabilities = () => {
             <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />
           </div>
         </div>
+        */}
 
         <div className="relative flex-grow">
           <input
@@ -300,11 +302,13 @@ const OrganizationLiabilities = () => {
       {/* Table Header - Rearranged columns with new GCash column */}
       <div className="w-full flex justify-between py-4 mt-6 border-b bg-gray-50 px-4 rounded-t-lg">
         <span style={{ width: "20%" }} className="text-gray-700 font-semibold">LIABILITY NAME</span>
+        <span style={{ width: "15%" }} className="text-gray-700 font-semibold">ACADEMIC YEAR</span>
         <span style={{ width: "10%" }} className="text-gray-700 font-semibold">SEMESTER</span>
         <span style={{ width: "12%" }} className="text-gray-700 font-semibold">AMOUNT</span>
         <span style={{ width: "18%" }} className="text-gray-700 font-semibold">GCASH NUMBER</span>
+        
         <span style={{ width: "15%" }} className="text-gray-700 font-semibold">PAYMENT DUE</span>
-        <span style={{ width: "15%" }} className="text-gray-700 font-semibold">STATUS</span>
+        <span style={{ width: "10%" }} className="text-gray-700 font-semibold">STATUS</span>
       </div>
 
       {isLoading ? (
@@ -322,6 +326,7 @@ const OrganizationLiabilities = () => {
             const unpaidCount = unpaidCounts[item.id] || 0;
             const semester = getSemester(item);
             const gcashNumber = getGCashNumber(item);
+            const academicYear = item.academicYear || item.academic_year || item.period?.academicYear || "N/A";
             
             return (
               <div
@@ -332,21 +337,22 @@ const OrganizationLiabilities = () => {
                 <span style={{ width: "20%" }} className="text-gray-700 font-medium">
                   {item.name || "Unnamed Liability"}
                 </span>
-                {/* Semester column */}
-                <span style={{ width: "10%" }} className="text-gray-600">
+                <span style={{ width: "15%" }} className="text-gray-600">
+                  {academicYear}
+                </span>
+                <span style={{ width: "11%" }} className="text-gray-600">
                   {semester}
                 </span>
                 <span style={{ width: "12%" }} className="text-gray-600">
                   {formatAmount(item.amount)}
                 </span>
-                {/* GCash Number column */}
                 <span style={{ width: "18%" }} className="text-gray-600">
                   {gcashNumber}
                 </span>
-                <span style={{ width: "15%" }} className="text-gray-600">
+                <span style={{ width: "13%" }} className="text-gray-600">
                   {item.formattedDeadline || "No deadline"}
                 </span>
-                <span style={{ width: "15%" }}>
+                <span style={{ width: "12%" }}>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-orange-100 border border-orange-300 text-orange-700">
                     {unpaidCount} unpaid students
                   </span>

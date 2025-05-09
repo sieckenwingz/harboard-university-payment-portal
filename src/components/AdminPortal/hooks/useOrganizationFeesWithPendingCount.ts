@@ -30,7 +30,7 @@ export const useOrganizationFeesWithPendingCount = (organizationId: string | nul
             setLoading(true);
             const { data, error } = await supabase
             .from('fees_with_pending_count')
-            .select('*')
+            .select('*, period:period_id (id, year, semester)')
             .eq('organization_id', organizationId);
     
             if (error) {
