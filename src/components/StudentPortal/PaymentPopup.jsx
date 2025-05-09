@@ -435,7 +435,9 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
                   
                   <button 
                     onClick={() => {
-                      if (selectedLiability.amount != amountEdit*100) {
+                      console.log(selectedLiability.amount);
+                      console.log(amountEdit*100);
+                      if (selectedLiability.feeId.amount != amountEdit) {
                         let ans = confirm('The fee amount does not match the amount paid. Comfirm anyway?');
                         if (!ans) {
                           return;
