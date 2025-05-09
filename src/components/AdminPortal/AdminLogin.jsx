@@ -16,25 +16,11 @@ const AdminLogin = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setErrorField(null); // Reset error state
+  event.preventDefault();
+  setLoading(true);
+  setErrorField(null);
 
-    // Basic validation before attempting to sign in
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setErrorField("email");
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorField("password");
-      setLoading(false);
-      return;
-    }
-
-    // Authenticate with Supabase Auth
+  try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -44,17 +30,7 @@ const AdminLogin = () => {
     });
 
     if (error) {
-      // Check if the error message suggests a password-specific issue
-      // This specifically checks for password-related error messages
-      if (error.message && 
-          (error.message.includes("Invalid login credentials") && 
-           email === "superadmin@harboard.test")) {
-        // If email is recognized but password is wrong, only highlight password
-        setErrorField("password-only");
-      } else {
-        // Otherwise highlight both email and password fields
-        setErrorField("credentials");
-      }
+      setErrorField("credentials"); // Always highlight both fields
       setLoading(false);
       return;
     }
@@ -74,15 +50,15 @@ const AdminLogin = () => {
         return;
       }
 
-      // Flag the session as an admin session
       localStorage.setItem("isAdmin", "true");
       navigate("/admin-dashboard");
-    } else {
-      setErrorField("credentials");
     }
-
+  } catch (e) {
+    setErrorField("credentials");
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -248,6 +224,11 @@ const AdminLogin = () => {
                     </div>
                   )}
                 </div>
+                {errorField === "credentials" && (
+                  <div className="mt-2 text-red-500 text-sm text-center animated fadeIn">
+                    Invalid credentials. Please check your email and password.
+                  </div>
+                )}
               </div>
 
               <div className="w-full mb-6 flex items-center text-sm sm:text-base">
