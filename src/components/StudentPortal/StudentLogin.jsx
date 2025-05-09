@@ -234,18 +234,6 @@ const StudentLogin = () => {
                 </div>
               )}
 
-              <div className="w-full mb-6 flex items-center text-sm sm:text-base">
-                <label className="flex items-center text-gray-700">
-                  <input
-                    type="checkbox"
-                    className="mr-2 h-4 w-4 accent-[#800000]"
-                    checked={rememberMe}
-                    onChange={() => setRememberMe(!rememberMe)}
-                  />
-                  Remember me
-                </label>
-              </div>
-
               <button
                 type="submit"
                 className="w-full py-2 sm:py-3 bg-[#800000] hover:bg-[#600000] text-white rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl glow-effect text-sm sm:text-base"
