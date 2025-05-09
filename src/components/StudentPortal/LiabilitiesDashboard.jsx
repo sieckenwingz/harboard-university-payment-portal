@@ -129,9 +129,9 @@ const LiabilitiesDashboard = () => {
 
   let displayLiabilities = [...filteredLiabilities];
   if (amountFilter === "High to Low") {
-    displayLiabilities.sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+    displayLiabilities.sort((a, b) => parseFloat(b.feeId.amount) - parseFloat(a.feeId.amount));
   } else if (amountFilter === "Low to High") {
-    displayLiabilities.sort((a, b) => parseFloat(a.amount) - parseFloat(b.amount));
+    displayLiabilities.sort((a, b) => parseFloat(a.feeId.amount) - parseFloat(b.feeId.amount));
   }
 
   const totalPages = Math.ceil(displayLiabilities.length / rowsPerPage);
