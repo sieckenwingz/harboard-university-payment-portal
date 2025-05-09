@@ -51,6 +51,30 @@ const LiabilitiesDashboard = () => {
     fetchFees()
   }, [])
 
+  // Helper function to get semester display text from periodId
+  const getSemesterText = (fee) => {
+    if (!fee || !fee.feeId) return "N/A";
+    if (typeof fee.feeId !== 'object') return "N/A";
+    
+    // Access period information
+    if (fee.feeId.periodId && typeof fee.feeId.periodId === 'object') {
+      const periodSemester = fee.feeId.periodId.semester;
+      
+      // Format the semester for display
+      if (periodSemester) {
+        // If the semester is stored as an enum or numeric value, format it
+        if (periodSemester === "FIRST") return "First";
+        if (periodSemester === "SECOND") return "Second";
+        if (periodSemester === "SUMMER") return "Summer";
+        
+        // Otherwise, return the semester as is
+        return periodSemester;
+      }
+    }
+    
+    return "N/A";
+  };
+
   const rowsPerPage = 5;
 
   const handleDropdownChange = (e, filterType) => {
@@ -164,30 +188,6 @@ const LiabilitiesDashboard = () => {
   };
 
   const summary = getSummary();
-
-  // Helper function to get semester display text from periodId
-  const getSemesterText = (fee) => {
-    if (!fee || !fee.feeId) return "N/A";
-    if (typeof fee.feeId !== 'object') return "N/A";
-    
-    // Access period information
-    if (fee.feeId.periodId && typeof fee.feeId.periodId === 'object') {
-      const periodSemester = fee.feeId.periodId.semester;
-      
-      // Format the semester for display
-      if (periodSemester) {
-        // If the semester is stored as an enum or numeric value, format it
-        if (periodSemester === "FIRST") return "First";
-        if (periodSemester === "SECOND") return "Second";
-        if (periodSemester === "SUMMER") return "Summer";
-        
-        // Otherwise, return the semester as is
-        return periodSemester;
-      }
-    }
-    
-    return "N/A";
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
