@@ -164,7 +164,7 @@ const PaymentPopup = ({ show, onClose, selectedLiability, onStatusChange }) => {
 
     setLoading(false);
     if (error) {
-      alert('Error');
+      alert('Error submitting payment. Please check your internet connection and ensure the receipt you\'re uploading hasn\'t been submitted before.');
     } else {
       setIsExiting(true);
       setTimeout(() => {
