@@ -313,7 +313,7 @@ const PaymentHistory = () => {
             <Calendar className="absolute left-2 top-2.5 text-gray-500" size={18} />
             <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />
           </div>
-          
+          {/*}
           <div className="relative">
             <select
               value={paymentType}
@@ -327,7 +327,7 @@ const PaymentHistory = () => {
             <PhilippinePeso className="absolute left-2 top-2.5 text-gray-500" size={18} />
             <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />
           </div>
-          
+          */}
           <div className="relative">
             <select
               value={statusFilter}
