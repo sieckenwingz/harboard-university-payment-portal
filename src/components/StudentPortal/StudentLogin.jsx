@@ -72,22 +72,22 @@ const StudentLogin = () => {
       if (error) {
         // Handle different error scenarios
         if (error.message.includes("Invalid login credentials")) {
-          // Check if the email exists by trying to reset password
-          const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + '/reset-password',
-          });
+          // // Check if the email exists by trying to reset password
+          // const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          //   redirectTo: window.location.origin + '/reset-password',
+          // });
           
-          console.log("Reset error:", resetError?.message);
+          // console.log("Reset error:", resetError?.message);
           
-          // If reset password gives "user not found" error, the email doesn't exist
-          if (resetError && (resetError.message.includes("user not found") || 
-                             resetError.message.toLowerCase().includes("not found") || 
-                             resetError.message.includes("Invalid"))) {
-            setErrors({...errors, email: "Email not registered"});
-          } else {
+          // // If reset password gives "user not found" error, the email doesn't exist
+          // if (resetError && (resetError.message.includes("user not found") || 
+          //                    resetError.message.toLowerCase().includes("not found") || 
+          //                    resetError.message.includes("Invalid"))) {
+          //   setErrors({...errors, email: "Email not registered"});
+          // } else {
             // Otherwise, the email exists but password is wrong
             setErrors({...errors, password: "Invalid password"});
-          }
+          // }
         } else if (error.message.includes("user not found") || 
                   error.message.toLowerCase().includes("not found") || 
                   error.message.includes("user") || 
